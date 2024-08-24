@@ -1,0 +1,32 @@
+run = "npm run dev-all"
+modules = ["nodejs-20:v20-20230728-2d2a6d2", "python-3.10:v25-20230920-d4ad2e4"]
+hidden = [".config", "tsconfig.json", "tsconfig.node.json", "vite.config.js", ".gitignore"]
+entrypoint = "src/App.tsx"
+
+[nix]
+channel = "stable-24_05"
+
+[unitTest]
+language = "nodejs"
+
+[deployment]
+deploymentTarget = "static"
+build = ["npm", "run", "build"]
+publicDir = "dist"
+
+[[ports]]
+localPort = 5173
+externalPort = 80
+exposeLocalhost = true
+
+[[ports]]
+localPort = 5174
+externalPort = 3000
+exposeLocalhost = true
+
+[[ports]]
+localPort = 5175
+externalPort = 3001
+
+[env]
+PORT = "5000"

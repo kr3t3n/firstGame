@@ -1,0 +1,9 @@
+flask==2.1.0
+flask-cors==3.0.10
+python-dotenv==0.19.2
+requests==2.27.1
+openai==1.3.0
+anthropic==0.3.11
+elevenlabs==0.2.24
+replicate==0.8.3
+werkzeug==2.0.3
