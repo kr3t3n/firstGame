@@ -6,19 +6,37 @@ export const calculateTurnLength = (year: number): number => {
   return 7; // 1 week
 };
 
-export const advanceTime = (currentDate: Date, days: number): Date => {
-  const newDate = new Date(currentDate);
-  newDate.setDate(newDate.getDate() + days);
+export const advanceTime = (currentDate: Date): Date => {
+  if (!(currentDate instanceof Date) || isNaN(currentDate.getTime())) {
+    return new Date(1800, 0, 1); // Return a default date if the input is invalid
+  }
+
+  const newDate = new Date(currentDate.getTime());
+  const currentYear = newDate.getFullYear();
+
+  if (currentYear < 1850) {
+    newDate.setFullYear(newDate.getFullYear() + 1);
+  } else if (currentYear < 1900) {
+    newDate.setMonth(newDate.getMonth() + 6);
+  } else if (currentYear < 1950) {
+    newDate.setMonth(newDate.getMonth() + 3);
+  } else if (currentYear < 2000) {
+    newDate.setMonth(newDate.getMonth() + 1);
+  } else {
+    newDate.setDate(newDate.getDate() + 7);
+  }
+
   return newDate;
 };
 
 export const formatDate = (date: Date): string => {
-  const year = date.getFullYear();
-  if (year <= 1850) {
-    return year.toString();
-  } else if (year <= 1950) {
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-  } else {
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    return 'Invalid Date';
   }
+
+  const year = date.getFullYear();
+  const month = date.toLocaleString('default', { month: 'short' });
+  const day = date.getDate();
+
+  return `${month} ${day}, ${year}`;
 };

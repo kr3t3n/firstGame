@@ -1,12 +1,38 @@
 import React from 'react';
 import { useGameState } from '../contexts/GameStateContext';
-import Tooltip from './Tooltip';
+import { FaDollarSign, FaBolt, FaHandshake, FaTruck, FaChartLine } from 'react-icons/fa';
 
 const CharacterSheet: React.FC = () => {
   const { state, upgradeSkill } = useGameState();
 
+  if (!state || !state.player) {
+    return <div>Loading...</div>;
+  }
+
+  const skillNames: { [key: string]: { name: string; icon: JSX.Element } } = {
+    negotiation: { name: 'Bargaining', icon: <FaHandshake className="mr-1" /> },
+    logistics: { name: 'Supply Chain', icon: <FaTruck className="mr-1" /> },
+    marketKnowledge: { name: 'Market Insight', icon: <FaChartLine className="mr-1" /> },
+  };
+
   const handleUpgradeSkill = (skill: keyof typeof state.player.skills) => {
-    upgradeSkill(skill);
+    const currentLevel = state.player.skills[skill];
+    const upgradeCost = Math.pow(2, currentLevel);
+    const energyCost = 10;
+
+    console.log('Attempting to upgrade skill:', skill);
+    console.log('Current skill level:', currentLevel);
+    console.log('Upgrade cost:', upgradeCost);
+    console.log('Current money:', state.player.money);
+    console.log('Current energy:', state.energy);
+    console.log('Current skill points:', state.player.skillPoints);
+
+    if (state.player.money >= upgradeCost && state.energy >= energyCost && state.player.skillPoints > 0) {
+      console.log('Calling upgradeSkill function');
+      upgradeSkill(skill);
+    } else {
+      console.log('Upgrade conditions not met in component');
+    }
   };
 
   const renderSkillButton = (skill: keyof typeof state.player.skills) => {
@@ -14,71 +40,55 @@ const CharacterSheet: React.FC = () => {
     const cost = Math.pow(2, level);
     const isDisabled = state.player.skillPoints === 0 || state.player.money < cost || state.energy < 10;
 
-    let skillDescription = '';
-    switch (skill) {
-      case 'negotiation':
-        skillDescription = 'Improves buying and selling prices';
-        break;
-      case 'logistics':
-        skillDescription = 'Increases inventory capacity';
-        break;
-      case 'marketKnowledge':
-        skillDescription = 'Provides better market information';
-        break;
-    }
-
     return (
-      <div key={skill} className="flex items-center justify-between mb-2">
-        <span className="text-sm">{skill.charAt(0).toUpperCase() + skill.slice(1)}: {level}</span>
-        <div className="flex items-center">
-          <button
-            className={`bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-1 px-3 rounded-full text-sm transition duration-150 ease-in-out flex items-center ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-            onClick={() => handleUpgradeSkill(skill)}
-            disabled={isDisabled}
-          >
-            Improve
-          </button>
-          <Tooltip content={`${skillDescription}. Cost: ${cost} 🪙, 10 ⚡`}>
-            <span className="text-xs text-gray-500 ml-2 cursor-help">ℹ️</span>
-          </Tooltip>
+      <div key={skill} className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 bg-gray-100 p-2 rounded-lg">
+        <div className="flex items-center mb-1 sm:mb-0">
+          {skillNames[skill].icon}
+          <span className="text-sm font-medium">{skillNames[skill].name}: {level}</span>
         </div>
+        <button
+          onClick={() => handleUpgradeSkill(skill)}
+          disabled={isDisabled}
+          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+        >
+          Improve <FaDollarSign className="ml-1 w-3 h-3" />{cost} <FaBolt className="ml-1 w-3 h-3" />10
+        </button>
       </div>
     );
   };
 
+  const displayMoney = React.useMemo(() => {
+    const money = state.player.money;
+    console.log('Calculating displayMoney in CharacterSheet:', money);
+    console.log('Player state in CharacterSheet:', state.player);
+    return typeof money === 'number' && !isNaN(money) ? money.toFixed(2) : '0.00';
+  }, [state.player.money]);
+
   return (
     <div className="mb-4">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h2 className="text-lg font-semibold mb-1">
-            Money
-            <Tooltip content="Your current wealth. Use it to buy goods, upgrade skills, and pay for travel.">
-              <span className="text-xs text-gray-500 ml-2 cursor-help">ℹ️</span>
-            </Tooltip>
-          </h2>
-          <p className="text-xl">🪙 {state.player.money.toFixed(2)}</p>
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="bg-green-100 p-3 rounded-lg">
+          <h3 className="text-sm font-semibold mb-1 text-green-800">Treasury</h3>
+          <p className="text-lg flex items-center text-green-700">
+            <FaDollarSign className="w-4 h-4 mr-1" />
+            {displayMoney}
+          </p>
         </div>
-        <div className="w-1/2">
-          <h2 className="text-lg font-semibold mb-1">
-            Energy
-            <Tooltip content="Energy is consumed when traveling or upgrading skills. It replenishes each turn.">
-              <span className="text-xs text-gray-500 ml-2 cursor-help">ℹ️</span>
-            </Tooltip>
-          </h2>
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
+        <div className="bg-blue-100 p-3 rounded-lg">
+          <h3 className="text-sm font-semibold mb-1 text-blue-800">Energy</h3>
+          <div className="w-full bg-blue-200 rounded-full h-4 mb-1">
             <div 
-              className="bg-blue-600 h-2.5 rounded-full" 
+              className="bg-blue-600 h-4 rounded-full" 
               style={{ width: `${(state.energy / state.maxEnergy) * 100}%` }}
             ></div>
           </div>
-          <p className="mt-1">⚡ {state.energy} / {state.maxEnergy}</p>
+          <p className="text-sm text-blue-700"><FaBolt className="inline mr-1" />{state.energy} / {state.maxEnergy}</p>
         </div>
       </div>
-      <div className="mb-2 flex items-center">
-        <span>Skill Points: {state.player.skillPoints}</span>
-        <Tooltip content="Skill points are earned when you level up. Use them to improve your skills.">
-          <span className="text-xs text-gray-500 ml-2 cursor-help">ℹ️</span>
-        </Tooltip>
+      <div className="mb-4 bg-yellow-100 p-3 rounded-lg">
+        <h3 className="text-sm font-semibold mb-1 text-yellow-800">
+          Skill Points: {state.player.skillPoints}
+        </h3>
       </div>
       {Object.keys(state.player.skills).map((skill) => renderSkillButton(skill as keyof typeof state.player.skills))}
     </div>

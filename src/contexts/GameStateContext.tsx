@@ -1,112 +1,123 @@
-import React, { createContext, useContext, useReducer, ReactNode, useCallback, useState, useEffect } from 'react';
-import { gameReducer } from '../reducers/gameReducer';
+import React, { createContext, useContext, useReducer, ReactNode, useCallback, useEffect, useState, useRef, useMemo } from 'react';
+import { gameReducer, generateNewsEvents } from '../reducers/gameReducer';
 import { initialGameState } from '../data/initialGameData';
-import { GameState, GameAction, Good, NewsItem } from '../types';
-import { upgradeSkill as upgradeSkillAction } from '../flux/actions';
-import { calculateTurnLength, advanceTime } from '../utils/timeUtils';
-import { generateEvents } from '../services/eventSystem';
+import { GameState, GameAction, Good, NewsItem, Player, TradeRoute, Town } from '../types';
+import { advanceTime } from '../utils/timeUtils';
+import { auth, firestore } from '../firebase/config';
+import { User } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { generateNews } from '../services/newsSystem';
+import { saveGameToFirestore, loadGameFromFirestore, autoSaveGame } from '../services/firestoreService';
+import * as actions from '../flux/actions';
 
 interface GameStateContextType {
   state: GameState;
+  user: User | null;
   buyGood: (good: Good, quantity: number) => void;
   sellGood: (good: Good, quantity: number) => void;
   travel: (townName: string) => void;
-  endTurn: () => void;
-  addNews: (news: NewsItem) => void;
-  toggleSection: (section: string, value?: boolean) => void;
-  expandedSections: {
-    [key: string]: boolean;
-  };
-  upgradeSkill: (skill: string) => void;
-  setCurrentNewsIndex: (index: number) => void;
-  saveGame: () => void;
-  loadGame: () => void;
-  newGame: () => void;
+  endTurn: () => Promise<void>;
+  newGame: () => Promise<void>;
+  toggleSection: (sectionName: string, value?: boolean) => void;
+  upgradeSkill: (skillName: keyof Player['skills']) => void;
+  newsRef: React.Ref<any>;
+  isLoading: boolean;
 }
 
 const GameStateContext = createContext<GameStateContextType | undefined>(undefined);
 
 export const GameStateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(gameReducer, initialGameState);
-  const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
+  const [user, setUser] = useState<User | null>(null);
+  const newsRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const buyGood = (good: Good, quantity: number) => {
-    dispatch({ type: 'BUY_GOOD', payload: { good, quantity } });
-  };
-
-  const sellGood = (good: Good, quantity: number) => {
-    dispatch({ type: 'SELL_GOOD', payload: { good, quantity } });
-  };
-
-  const travel = (townName: string) => {
-    dispatch({ type: 'TRAVEL', payload: townName });
-  };
-
-  const endTurn = useCallback(() => {
-    const turnLength = calculateTurnLength(state.currentDate.getFullYear());
-    const newDate = advanceTime(state.currentDate, turnLength);
-    const newEvents = generateEvents(newDate, state);
-    
-    dispatch({ type: 'PROGRESS_TIME', payload: { newDate, newEvents } });
-    dispatch({ type: 'UPDATE_TOWN_PRICES' });
-    
-    // Reset the current news index to 0 to show the latest news
-    setCurrentNewsIndex(0);
-  }, [state]);
-
-  const addNews = (news: NewsItem) => {
-    dispatch({ type: 'ADD_NEWS', payload: news });
-  };
-
-  const toggleSection = (section: string, value?: boolean) => {
-    dispatch({ 
-      type: 'TOGGLE_SECTION', 
-      payload: { section, value: value !== undefined ? value : !state.expandedSections[section] } 
-    });
-  };
-
-  const upgradeSkill = (skill: string) => {
-    upgradeSkillAction(dispatch, skill);
-  };
-
-  const saveGame = useCallback(() => {
-    localStorage.setItem('gameState', JSON.stringify(state));
-  }, [state]);
-
-  const loadGame = useCallback(() => {
-    const savedState = localStorage.getItem('gameState');
-    if (savedState) {
-      const parsedState = JSON.parse(savedState);
-      parsedState.currentDate = new Date(parsedState.currentDate); // Convert date string back to Date object
-      dispatch({ type: 'LOAD_GAME', payload: parsedState });
-    }
-  }, []);
-
-  const newGame = useCallback(() => {
-    dispatch({ type: 'NEW_GAME' });
-  }, []);
-
-  // Load saved game on initial render
   useEffect(() => {
-    loadGame();
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      setUser(user);
+      if (user) {
+        try {
+          setIsLoading(true);
+          const savedState = await loadGameFromFirestore(user.uid);
+          if (savedState) {
+            dispatch({ type: 'LOAD_GAME', payload: savedState });
+          }
+        } catch (error) {
+          // Handle error silently or show a user-friendly message
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (user && state && !isLoading) {
+      autoSaveGame(user.uid, state);
+    }
+  }, [state, user, isLoading]);
+
+  const autosave = useCallback((newState: GameState) => {
+    if (user) {
+      autoSaveGame(user.uid, newState);
+    }
+  }, [user]);
+
+  const buyGood = useCallback((good: Good, quantity: number) => {
+    actions.buyGood(dispatch, good, quantity);
+  }, [dispatch]);
+
+  const sellGood = useCallback((good: Good, quantity: number) => {
+    actions.sellGood(dispatch, good, quantity);
+  }, [dispatch]);
+
+  const travel = useCallback((townName: string) => {
+    actions.travel(dispatch, townName);
+  }, [dispatch]);
+
+  const endTurn = useCallback(async () => {
+    const newDate = advanceTime(state.currentDate);
+    const newEvents = await generateNewsEvents(state);
+    actions.endTurn(dispatch, newDate, newEvents);
+  }, [state, dispatch]);
+
+  const newGame = useCallback(async () => {
+    dispatch({ type: 'NEW_GAME' });
+    autosave(initialGameState);
+  }, [dispatch, autosave]);
+
+  const upgradeSkill = useCallback((skill: keyof Player['skills']) => {
+    actions.upgradeSkill(dispatch, skill);
+  }, [dispatch]);
+
+  const toggleSection = useCallback((section: string, value?: boolean) => {
+    actions.toggleSection(dispatch, section, value !== undefined ? value : !state.expandedSections[section]);
+  }, [dispatch, state.expandedSections]);
+
+  const contextValue = useMemo(() => ({
+    state,
+    user,
+    buyGood,
+    sellGood,
+    travel,
+    endTurn,
+    newGame,
+    toggleSection,
+    upgradeSkill,
+    newsRef,
+    isLoading
+  }), [state, user, buyGood, sellGood, travel, endTurn, newGame, toggleSection, upgradeSkill, newsRef, isLoading]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
-    <GameStateContext.Provider value={{ 
-      state, 
-      buyGood, 
-      sellGood, 
-      travel, 
-      endTurn, 
-      addNews, 
-      toggleSection, 
-      expandedSections: state.expandedSections, 
-      upgradeSkill,
-      setCurrentNewsIndex,
-      saveGame,
-      loadGame,
-      newGame
-    }}>
+    <GameStateContext.Provider value={contextValue}>
       {children}
     </GameStateContext.Provider>
   );

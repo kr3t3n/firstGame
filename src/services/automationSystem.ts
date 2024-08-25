@@ -10,10 +10,10 @@ export const executeTradeRoute = (route: TradeRoute, gameState: GameState): Game
   let updatedState = gameState;
 
   route.goods.forEach(goodName => {
-    const goodToBuy = fromTown.goods.find(g => g.name === goodName) as Good & { quantity: number };
+    const goodToBuy = fromTown.goods.find(g => g.name === goodName) as Good & { quantity: number, previousPrice: number };
     if (goodToBuy) {
       updatedState = buyGood(updatedState, fromTown, goodToBuy, route.quantity);
-      const boughtGood = updatedState.player.inventory.find(g => g.name === goodName) as Good & { quantity: number };
+      const boughtGood = updatedState.player.inventory.find(g => g.name === goodName) as Good & { quantity: number, previousPrice: number };
       if (boughtGood) {
         updatedState = sellGood(updatedState, toTown, boughtGood, boughtGood.quantity);
       }
@@ -23,7 +23,7 @@ export const executeTradeRoute = (route: TradeRoute, gameState: GameState): Game
   return updatedState;
 };
 
-const buyGood = (state: GameState, town: Town, good: Good, quantity: number): GameState => {
+const buyGood = (state: GameState, town: Town, good: Good & { quantity: number, previousPrice: number }, quantity: number): GameState => {
   const maxAffordableQuantity = Math.floor(state.player.money / good.price);
   const quantityToBuy = Math.min(maxAffordableQuantity, quantity);
 
@@ -41,6 +41,7 @@ const buyGood = (state: GameState, town: Town, good: Good, quantity: number): Ga
             name: good.name, 
             price: good.price, 
             basePrice: good.basePrice,
+            previousPrice: good.previousPrice,
             quantity: (state.player.inventory.find(item => item.name === good.name)?.quantity || 0) + quantityToBuy,
             category: good.category
           },
@@ -52,7 +53,7 @@ const buyGood = (state: GameState, town: Town, good: Good, quantity: number): Ga
   return state;
 };
 
-const sellGood = (state: GameState, town: Town, good: Good & { quantity: number }, quantity: number): GameState => {
+const sellGood = (state: GameState, town: Town, good: Good & { quantity: number, previousPrice: number }, quantity: number): GameState => {
   const townGood = town.goods.find(g => g.name === good.name);
   if (!townGood) return state;
 

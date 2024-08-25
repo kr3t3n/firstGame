@@ -1,37 +1,42 @@
 import React from 'react';
 import { useGameState } from '../contexts/GameStateContext';
-import Tooltip from './Tooltip';
 
 const TravelMap: React.FC = () => {
   const { state, travel } = useGameState();
 
-  if (!state) {
+  if (!state || !state.player) {
     return <div>Loading...</div>;
   }
 
   const handleTravel = (townName: string) => {
-    if (townName) {
-      travel(townName);
-    }
+    travel(townName);
+  };
+
+  const cityFlags: { [key: string]: string } = {
+    'Amsterdam': '🇳🇱',
+    'London': '🇬🇧',
+    'Paris': '🇫🇷',
+    // Add more cities and their corresponding flag emojis here
   };
 
   return (
     <div className="mb-4">
-      <div className="flex items-center mb-2">
-        <h3 className="font-medium mr-2">Travel</h3>
-        <Tooltip content="Travel to different towns to buy and sell goods. Each journey costs 10 coins and 20 energy.">
-          <span className="text-xs text-gray-500 cursor-help">ℹ️</span>
-        </Tooltip>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {state.towns.map((town) => (
+      <h2 className="text-xl font-bold mb-2">Travel Map</h2>
+      <div className="flex flex-wrap justify-between">
+        {state.towns.map(town => (
           <button
             key={town.name}
-            className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-1 px-3 rounded-full text-sm transition duration-150 ease-in-out"
             onClick={() => handleTravel(town.name)}
-            disabled={town.name === state.player.currentTown || state.player.money < 10 || state.energy < 20}
+            disabled={town.name === state.player.currentTown || state.energy < 10}
+            className={`flex-1 p-2 m-1 rounded-lg text-white font-bold text-sm ${
+              town.name === state.player.currentTown
+                ? 'bg-gray-400 cursor-not-allowed'
+                : state.energy < 10
+                ? 'bg-gray-300 cursor-not-allowed'
+                : 'bg-blue-500 hover:bg-blue-600'
+            }`}
           >
-            {town.name}
+            {cityFlags[town.name] || ''} {town.name}
           </button>
         ))}
       </div>

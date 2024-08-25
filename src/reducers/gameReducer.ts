@@ -1,44 +1,94 @@
-import { GameState, GameAction, NewsItem, TradeRoute, Good } from '../types';
+import { GameState, GameAction, NewsItem, TradeRoute, Good, Town, Player } from '../types';
 import { generateEvents } from '../services/eventSystem';
-import { calculateTurnLength, advanceTime } from '../utils/timeUtils';
+import { calculateTurnLength, advanceTime, formatDate } from '../utils/timeUtils';
 import { applyNegotiationEffect, applyLogisticsEffect, calculateInventoryCapacity } from '../utils/skillEffects';
 import { executeTradeRoute } from '../services/automationSystem';
 import { unlockTechnology, getNewGoodsForTechnology } from '../services/technologySystem';
-import { calculatePrice, generateMarketSentiment } from '../services/marketSystem';
+import { calculatePrice, generateMarketSentiment, updateMarketPrices } from '../services/marketSystem';
 import { initialGameState } from '../data/initialGameData';
+import { generateNews } from '../services/newsSystem';
+
+const updatePrices = (towns: Town[], date: Date): Town[] => {
+  return towns.map(town => ({
+    ...town,
+    goods: town.goods.map(good => {
+      const newPrice = calculatePrice(good.basePrice, town.name, good.name);
+      const newMarketSentiment = generateMarketSentiment(good, date);
+      return {
+        ...good,
+        previousPrice: good.price,
+        price: newPrice,
+        marketSentiment: newMarketSentiment,
+      };
+    }),
+  }));
+};
 
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
     case 'PROGRESS_TIME': {
       const { newDate, newEvents } = action.payload;
+      const updatedTowns = updatePrices(state.towns, newDate);
+      const newGoods = getNewGoodsForTechnology(newDate.getFullYear(), state.currentDate.getFullYear());
       
-      // Update towns with new market sentiments
-      const updatedTowns = state.towns.map(town => ({
-        ...town,
-        goods: town.goods.map(good => ({
-          ...good,
-          price: calculatePrice(good.basePrice, town.name, good.name),
-          marketSentiment: generateMarketSentiment(good, state.player.skills.marketKnowledge)
-        }))
-      }));
+      // Add skill point every turn
+      const newSkillPoints = state.player.skillPoints + 1;
+      console.log('Adding skill point. New total:', newSkillPoints);
 
       return {
         ...state,
         currentDate: newDate,
-        energy: state.maxEnergy, // Replenish energy
+        towns: updatedTowns,
+        news: [...state.news, ...newEvents],
+        unlockedTechnologies: [
+          ...state.unlockedTechnologies,
+          ...newGoods.map(good => good.name),
+        ],
         player: {
           ...state.player,
-          skillPoints: state.player.skillPoints + 1, // Grant a skill point each turn
+          skillPoints: newSkillPoints,
         },
-        news: [...newEvents, ...state.news].slice(0, 5), // Keep the 5 most recent news items
-        towns: updatedTowns,
       };
+    }
+
+    case 'UPGRADE_SKILL': {
+      const skill = action.payload;
+      const currentLevel = state.player.skills[skill];
+      const upgradeCost = Math.pow(2, currentLevel);
+      const energyCost = 10;
+
+      console.log('Attempting to upgrade skill:', skill);
+      console.log('Current skill level:', currentLevel);
+      console.log('Upgrade cost:', upgradeCost);
+      console.log('Current money:', state.player.money);
+      console.log('Current energy:', state.energy);
+      console.log('Current skill points:', state.player.skillPoints);
+
+      if (state.player.money >= upgradeCost && state.energy >= energyCost && state.player.skillPoints > 0) {
+        console.log('Upgrade conditions met. Upgrading skill.');
+        return {
+          ...state,
+          player: {
+            ...state.player,
+            money: state.player.money - upgradeCost,
+            skills: {
+              ...state.player.skills,
+              [skill]: currentLevel + 1,
+            },
+            skillPoints: state.player.skillPoints - 1,
+          },
+          energy: state.energy - energyCost,
+        };
+      } else {
+        console.log('Upgrade conditions not met. Skill not upgraded.');
+        return state;
+      }
     }
 
     case 'ADD_NEWS': {
       return {
         ...state,
-        news: [action.payload, ...state.news].slice(0, 10), // Keep the last 10 news items
+        news: [action.payload, ...state.news].slice(0, 10),
       };
     }
 
@@ -54,29 +104,6 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
         })),
       };
 
-    case 'UPGRADE_SKILL': {
-      const skill = action.payload as string;
-      const currentLevel = state.player.skills[skill];
-      const upgradeCost = Math.pow(2, currentLevel);
-      
-      if (state.player.skillPoints > 0 && state.player.money >= upgradeCost && state.energy >= 10) {
-        return {
-          ...state,
-          player: {
-            ...state.player,
-            money: state.player.money - upgradeCost,
-            skillPoints: state.player.skillPoints - 1,
-            skills: {
-              ...state.player.skills,
-              [skill]: currentLevel + 1
-            }
-          },
-          energy: state.energy - 10
-        };
-      }
-      return state;
-    }
-
     case 'USE_ENERGY':
       return {
         ...state,
@@ -84,63 +111,83 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       };
 
     case 'BUY_GOOD': {
-      const { good, quantity } = action.payload;
-      const totalCost = good.price * quantity;
-      
-      console.log('BUY_GOOD action received:', { good, quantity, totalCost });
-      console.log('Current inventory:', state.player.inventory);
+      const { good, quantity, cost } = action.payload;
+      console.log('BUY_GOOD action received:', { good, quantity, cost });
+      console.log('Current player money:', state.player.money);
+      console.log('Current energy:', state.energy);
 
-      if (state.player.money >= totalCost && state.energy >= quantity) {
-        const updatedInventory = state.player.inventory.map(item => {
-          if (item.name === good.name) {
-            console.log('Updating existing item:', item);
-            return { ...item, quantity: item.quantity + quantity };
-          }
-          return item;
-        });
-
-        if (!updatedInventory.some(item => item.name === good.name)) {
-          console.log('Adding new item:', { ...good, quantity });
-          updatedInventory.push({ ...good, quantity });
-        }
-
-        const newState = {
-          ...state,
-          player: {
-            ...state.player,
-            money: state.player.money - totalCost,
-            inventory: updatedInventory
-          },
-          energy: state.energy - quantity
-        };
-
-        console.log('New state after buy:', newState);
-        return newState;
+      if (state.player.money < cost || state.energy < 1) {
+        console.log('Not enough money or energy to buy');
+        return state;
       }
-      return state;
+      
+      const updatedMoney = state.player.money - cost;
+      const updatedEnergy = state.energy - 1;
+      
+      const existingItem = state.player.inventory.find(item => item.name === good.name);
+      
+      const updatedInventory = existingItem
+        ? state.player.inventory.map(item =>
+            item.name === good.name
+              ? { ...item, quantity: item.quantity + quantity }
+              : item
+          )
+        : [...state.player.inventory, { ...good, quantity }];
+
+      console.log('Updated money after buy:', updatedMoney);
+      console.log('Updated energy after buy:', updatedEnergy);
+      console.log('Updated inventory after buy:', updatedInventory);
+
+      const newState = {
+        ...state,
+        player: {
+          ...state.player,
+          money: updatedMoney,
+          inventory: updatedInventory
+        },
+        energy: updatedEnergy
+      };
+
+      console.log('New state after BUY_GOOD:', newState);
+      return newState;
     }
 
-    case 'SELL_GOOD':
+    case 'SELL_GOOD': {
       const { good, quantity } = action.payload;
-      const inventoryItem = state.player.inventory.find(item => item.name === good.name);
-      if (inventoryItem && inventoryItem.quantity >= quantity && state.energy >= 1) {
-        const updatedInventory = state.player.inventory.map(item =>
-          item.name === good.name
-            ? { ...item, quantity: item.quantity - quantity }
-            : item
-        ).filter(item => item.quantity > 0);
+      console.log('SELL_GOOD action received:', { good, quantity });
+      console.log('Current player money:', state.player.money);
+      console.log('Current inventory:', state.player.inventory);
 
-        return {
-          ...state,
-          player: {
-            ...state.player,
-            money: state.player.money + good.price * quantity,
-            inventory: updatedInventory,
-          },
-          energy: state.energy - 1,
-        };
+      const inventoryItem = state.player.inventory.find(item => item.name === good.name);
+      if (!inventoryItem || inventoryItem.quantity < quantity) {
+        console.log('Not enough items in inventory to sell');
+        return state;
       }
-      return state;
+
+      const earnings = good.price * quantity;
+      console.log('Earnings from sale:', earnings);
+
+      const updatedInventory = state.player.inventory.map(item =>
+        item.name === good.name
+          ? { ...item, quantity: item.quantity - quantity }
+          : item
+      ).filter(item => item.quantity > 0);
+
+      const updatedMoney = state.player.money + earnings;
+      console.log('Updated money after sale:', updatedMoney);
+
+      const newState = {
+        ...state,
+        player: {
+          ...state.player,
+          money: updatedMoney,
+          inventory: updatedInventory,
+        },
+      };
+
+      console.log('New state after SELL_GOOD:', newState);
+      return newState;
+    }
 
     case 'TRAVEL': {
       if (action.payload) {
@@ -179,18 +226,29 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     }
 
     case 'TOGGLE_SECTION': {
+      if (!action.payload) {
+        console.error('TOGGLE_SECTION action payload is undefined');
+        return state;
+      }
       const { section, value } = action.payload;
       return {
         ...state,
         expandedSections: {
           ...state.expandedSections,
-          [section]: value
+          [section]: value !== undefined ? value : !state.expandedSections[section]
         }
       };
     }
 
     case 'LOAD_GAME':
-      return action.payload;
+      return {
+        ...action.payload,
+        currentDate: new Date(action.payload.currentDate),
+        news: action.payload.news.map((item: NewsItem) => ({
+          ...item,
+          date: new Date(item.date)
+        }))
+      };
 
     case 'NEW_GAME':
       return initialGameState;
@@ -202,6 +260,11 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
 
 // New function to handle asynchronous event generation
 export const generateNewsEvents = async (state: GameState): Promise<NewsItem[]> => {
-  const newEvents = await generateEvents(state.currentDate, state);
-  return newEvents;
+  try {
+    const news = await generateNews(state, state.currentDate);
+    return Array.isArray(news) ? news : [];
+  } catch (error) {
+    console.error('Error generating news events:', error);
+    return [];
+  }
 };

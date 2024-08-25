@@ -1,33 +1,35 @@
 import React from 'react';
 import { useGameState } from '../contexts/GameStateContext';
-import Tooltip from './Tooltip';
+import { FaQuestionCircle, FaHourglassEnd } from 'react-icons/fa';
+import { formatDate } from '../utils/timeUtils';
 
 interface BottomNavBarProps {
-  onEndTurn: () => void;
-  onToggleAllSections: () => void;
-  allSectionsExpanded: boolean;
+  onShowHelp: () => void;
 }
 
-const BottomNavBar: React.FC<BottomNavBarProps> = ({ onEndTurn, onToggleAllSections, allSectionsExpanded }) => {
+const BottomNavBar: React.FC<BottomNavBarProps> = ({ onShowHelp }) => {
+  const { endTurn, state } = useGameState();
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-md p-2 flex justify-between items-center md:hidden">
-      <Tooltip content="Toggle visibility of all game sections">
-        <button
-          onClick={onToggleAllSections}
-          className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-1.5 px-3 rounded-md text-sm transition duration-150 ease-in-out"
-        >
-          {allSectionsExpanded ? 'Collapse' : 'Expand'}
-        </button>
-      </Tooltip>
-      <Tooltip content="End the current turn and advance time">
-        <button
-          onClick={onEndTurn}
-          className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-1.5 px-3 rounded-md text-sm transition duration-150 ease-in-out"
-        >
-          End Turn
-        </button>
-      </Tooltip>
-    </div>
+    <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-md p-2 flex justify-between items-center md:hidden">
+      <button
+        onClick={onShowHelp}
+        className="flex flex-col items-center text-blue-500"
+      >
+        <FaQuestionCircle className="text-2xl" />
+        <span className="text-xs">Help</span>
+      </button>
+      <div className="text-sm bg-gray-100 px-3 py-1 rounded-full shadow-inner">
+        <span className="font-medium">{formatDate(state.currentDate)}</span>
+      </div>
+      <button
+        onClick={endTurn}
+        className="flex flex-col items-center text-green-500"
+      >
+        <FaHourglassEnd className="text-2xl" />
+        <span className="text-xs">End Turn</span>
+      </button>
+    </nav>
   );
 };
 

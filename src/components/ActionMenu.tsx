@@ -2,12 +2,11 @@ import React from 'react';
 import { useGameState } from '../contexts/GameStateContext';
 
 const ActionMenu: React.FC = () => {
-  const { advanceTime, updateTownPrices, state } = useGameState();
+  const { endTurn, state } = useGameState();
 
   const handleEndTurn = () => {
     console.log('Ending turn');
-    advanceTime();
-    updateTownPrices();
+    endTurn();
   };
 
   if (!state) {

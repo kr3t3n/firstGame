@@ -1,104 +1,58 @@
-import React, { useState, useCallback } from 'react';
-// import ResourcePanel from './ResourcePanel';
-import TownView from './TownView';
-import TravelMap from './TravelMap';
-import InventoryPanel from './InventoryPanel';
-import CharacterSheet from './CharacterSheet';
-// import EnergyDisplay from './EnergyDisplay';
-import NewsPanel from './NewsPanel';
-import MarketOverview from './MarketOverview';
-import Header from './Header';
-import BottomNavBar from './BottomNavBar';
+import React from 'react';
 import { useGameState } from '../contexts/GameStateContext';
-
-interface SectionProps {
-  title: string;
-  children: React.ReactNode;
-  icon: string;
-  isExpanded: boolean;
-  onToggle: () => void;
-  className?: string;
-}
-
-const Section: React.FC<SectionProps> = ({ title, children, icon, isExpanded, onToggle, className }) => {
-  return (
-    <div className={`bg-white rounded-md shadow-sm overflow-hidden border border-gray-200 ${isExpanded ? '' : 'h-10'} ${className}`}>
-      <div 
-        className="bg-gray-50 text-gray-800 p-2 flex items-center justify-between border-b border-gray-200 cursor-pointer"
-        onClick={onToggle}
-      >
-        <div className="flex items-center">
-          <span className="text-base mr-2">{icon}</span>
-          <h2 className="text-sm font-medium">{title}</h2>
-        </div>
-        <span className="text-xs">{isExpanded ? '▼' : '▶'}</span>
-      </div>
-      {isExpanded && <div className="p-2 text-sm">{children}</div>}
-    </div>
-  );
-};
+import CharacterSheet from './CharacterSheet';
+import Inventory from './Inventory';
+import TravelMap from './TravelMap';
+import TownView from './TownView';
+import NewsPanel from './NewsPanel';
+import MobileTownView from './MobileTownView';
 
 const GameBoard: React.FC = () => {
-  const { state, endTurn, toggleSection } = useGameState();
-  const [allSectionsExpanded, setAllSectionsExpanded] = useState(true);
-
-  const toggleAllSections = useCallback(() => {
-    const newExpandedState = !allSectionsExpanded;
-    setAllSectionsExpanded(newExpandedState);
-    Object.keys(state.expandedSections).forEach(section => {
-      toggleSection(section, newExpandedState);
-    });
-  }, [allSectionsExpanded, toggleSection, state.expandedSections]);
+  const { state } = useGameState();
 
   if (!state) {
-    return <div>Loading... State is undefined.</div>;
+    return <div>Loading...</div>;
   }
 
   return (
-    <div className="bg-gray-100 min-h-screen pb-16 md:pb-0">
-      <Header 
-        onEndTurn={endTurn} 
-        onToggleAllSections={toggleAllSections}
-        allSectionsExpanded={allSectionsExpanded}
-        currentDate={state.currentDate}
-      />
-      <div className="container mx-auto px-2 py-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          <Section title="Player & Travel" icon="👤" isExpanded={state.expandedSections.playerInfo} onToggle={() => toggleSection('playerInfo')}>
+    <div className="container mx-auto p-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* First column (1/3 width on desktop, full width on mobile) */}
+        <div className="md:col-span-1">
+          {/* Family Business Data */}
+          <div className="mb-4 p-4 bg-white rounded-lg shadow-md">
+            <h2 className="text-xl font-bold mb-4">Family Business Data</h2>
             <CharacterSheet />
-            <div className="mt-4">
-              <h3 className="font-medium mb-2">Inventory</h3>
-              <InventoryPanel />
-            </div>
-            <div className="mt-4">
-              <h3 className="font-medium mb-2">Travel</h3>
-              <TravelMap />
-            </div>
-          </Section>
-          <Section title="Current Town" icon="🏙️" isExpanded={state.expandedSections.town} onToggle={() => toggleSection('town')}>
-            <TownView />
-          </Section>
-          <Section title="News" icon="📰" isExpanded={state.expandedSections.news} onToggle={() => toggleSection('news')}>
+            <Inventory />
+          </div>
+          
+          {/* TravelMap */}
+          <TravelMap />
+          
+          {/* NewsPanel (only on desktop) */}
+          <div className="hidden md:block">
             <NewsPanel />
-          </Section>
+          </div>
         </div>
-        <div className="mt-3">
-          <Section 
-            title="Market Overview" 
-            icon="🌍" 
-            isExpanded={state.expandedSections.marketAndTravel} 
-            onToggle={() => toggleSection('marketAndTravel')}
-            className="w-full"
-          >
-            <MarketOverview />
-          </Section>
+
+        {/* Second column (2/3 width on desktop, full width on mobile) */}
+        <div className="md:col-span-2">
+          {/* TownView (hidden on mobile) */}
+          <div className="hidden md:block">
+            <TownView />
+          </div>
+          
+          {/* MobileTownView (only on mobile) */}
+          <div className="md:hidden">
+            <MobileTownView />
+          </div>
+          
+          {/* NewsPanel (only on mobile) */}
+          <div className="md:hidden">
+            <NewsPanel />
+          </div>
         </div>
       </div>
-      <BottomNavBar
-        onEndTurn={endTurn}
-        onToggleAllSections={toggleAllSections}
-        allSectionsExpanded={allSectionsExpanded}
-      />
     </div>
   );
 };

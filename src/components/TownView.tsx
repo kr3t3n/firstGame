@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useGameState } from '../contexts/GameStateContext';
-import { Good } from '../types';
-import Tooltip from './Tooltip';
+import { Good, Trend } from '../types';
+import { FaDollarSign, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { productIcons } from '../utils/productIcons';
 
 const TownView: React.FC = () => {
   const { state, buyGood, sellGood } = useGameState();
-  const [unselectedCategories, setUnselectedCategories] = useState<string[]>([]);
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  if (!state || !state.player || !state.player.inventory) {
+  if (!state || !state.player) {
     return <div>Loading...</div>;
   }
 
@@ -17,88 +18,133 @@ const TownView: React.FC = () => {
     return <div>Error: Current town not found</div>;
   }
 
-  const categories = Array.from(new Set(currentTown.goods.map(good => good.category || 'Uncategorized')));
-
-  const toggleCategory = (category: string) => {
-    setUnselectedCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    );
-  };
-
-  const filteredGoods = currentTown.goods.filter(good => !unselectedCategories.includes(good.category || 'Uncategorized'));
-
-  const handleBuy = (good: Good) => {
-    if (state.player.money >= good.price && state.energy >= 1) {
-      buyGood(good, 1);
-    } else {
-      console.log('Not enough money or energy to buy');
+  const renderTrendIcon = (trend: 'significant-increase' | 'slight-increase' | 'stable' | 'slight-decrease' | 'significant-decrease') => {
+    switch (trend) {
+      case 'significant-increase':
+        return <span className="text-green-700 font-bold">▲</span>;
+      case 'slight-increase':
+        return <span className="text-green-500">▲</span>;
+      case 'stable':
+        return <span className="text-black">≈</span>;
+      case 'slight-decrease':
+        return <span className="text-red-500">▼</span>;
+      case 'significant-decrease':
+        return <span className="text-red-700 font-bold">▼</span>;
     }
   };
 
-  const handleSell = (good: Good) => {
-    const inventoryItem = state.player.inventory.find(item => item.name === good.name);
-    if (inventoryItem && inventoryItem.quantity > 0 && state.energy >= 1) {
-      sellGood(good, 1);
-    } else {
-      console.log('Not enough inventory or energy to sell');
+  const getPriceTrend = (currentPrice: number, previousPrice: number) => {
+    if (previousPrice === 0) return 'stable';
+    const percentChange = ((currentPrice - previousPrice) / previousPrice) * 100;
+    if (percentChange > 10) return 'significant-increase';
+    if (percentChange > 3) return 'slight-increase';
+    if (percentChange < -10) return 'significant-decrease';
+    if (percentChange < -3) return 'slight-decrease';
+    return 'stable';
+  };
+
+  const getMarketTrend = (good: Good) => {
+    const marketSentiment = good.marketSentiment || { trend: 'stable', strength: 0 };
+    if (marketSentiment.trend === 'up') {
+      if (marketSentiment.strength > 0.7) return 'significant-increase';
+      if (marketSentiment.strength > 0.3) return 'slight-increase';
+    } else if (marketSentiment.trend === 'down') {
+      if (marketSentiment.strength > 0.7) return 'significant-decrease';
+      if (marketSentiment.strength > 0.3) return 'slight-decrease';
     }
+    return 'stable';
   };
 
   return (
-    <div className="mb-4">
-      <h2 className="text-xl font-bold mb-2">
-        {currentTown.name}
-        <Tooltip content="Each town has unique goods and prices. Buy low and sell high to make a profit!">
-          <span className="text-xs text-gray-500 ml-2 cursor-help">ℹ️</span>
-        </Tooltip>
-      </h2>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <h3 className="font-semibold mb-2">
-            Buy
-            <Tooltip content="Purchase goods from the town. Prices may fluctuate each turn.">
-              <span className="text-xs text-gray-500 ml-2 cursor-help">ℹ️</span>
-            </Tooltip>
-          </h3>
-          {filteredGoods.map(good => (
-            <div key={good.name} className="flex justify-between items-center mb-2">
-              <span>{good.name}: ${good.price.toFixed(2)}</span>
-              <button
-                onClick={() => handleBuy(good)}
-                disabled={state.player.money < good.price || state.energy < 1}
-                className="bg-blue-500 text-white px-2 py-1 rounded disabled:opacity-50"
-              >
-                Buy
-              </button>
-            </div>
-          ))}
-        </div>
-        <div>
-          <h3 className="font-semibold mb-2">
-            Sell
-            <Tooltip content="Sell goods from your inventory. Prices may be different from what you paid.">
-              <span className="text-xs text-gray-500 ml-2 cursor-help">ℹ️</span>
-            </Tooltip>
-          </h3>
-          {filteredGoods.map(good => {
-            const inventoryItem = state.player.inventory.find(item => item.name === good.name);
-            return (
-              <div key={good.name} className="flex justify-between items-center mb-2">
-                <span>{good.name} (x{inventoryItem?.quantity || 0}): ${good.price.toFixed(2)}</span>
-                <button
-                  onClick={() => handleSell(good)}
-                  disabled={!inventoryItem || inventoryItem.quantity === 0 || state.energy < 1}
-                  className="bg-green-500 text-white px-2 py-1 rounded disabled:opacity-50"
-                >
-                  Sell
-                </button>
-              </div>
-            );
-          })}
-        </div>
+    <div className="mb-4 p-4 bg-white rounded-lg shadow-md">
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="text-xl font-bold">{currentTown.name} Market</h2>
+        <button onClick={() => setIsExpanded(!isExpanded)} className="text-gray-500">
+          {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
+        </button>
       </div>
+      {isExpanded && (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-max">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="p-2 text-left">Product</th>
+                <th className="p-2 text-left">Price</th>
+                <th className="p-2 text-left">Trends</th>
+                <th className="p-2 text-left">Actions</th>
+                {state.towns.filter(town => town.name !== currentTown.name).map(town => (
+                  <th key={town.name} className="p-2 text-left">{town.name}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {currentTown.goods.map((good: Good) => {
+                const priceTrend = getPriceTrend(good.price, good.previousPrice);
+                const marketTrend = getMarketTrend(good);
+
+                return (
+                  <tr key={good.name} className="border-b">
+                    <td className="p-2">
+                      <span className="mr-2">{productIcons[good.name] || '🔹'}</span>
+                      {good.name}
+                    </td>
+                    <td className="p-2">
+                      <span className="font-bold"><FaDollarSign className="inline" />{good.price.toFixed(2)}</span>
+                    </td>
+                    <td className="p-2">
+                      {renderTrendIcon(priceTrend)}
+                      <span className="mx-1">|</span>
+                      {renderTrendIcon(marketTrend)}
+                    </td>
+                    <td className="p-2">
+                      <button
+                        onClick={() => {
+                          console.log('Buy button clicked for:', good);
+                          if (good && typeof good.price === 'number') {
+                            buyGood(good, 1);
+                          } else {
+                            console.error('Invalid good or price:', good);
+                          }
+                        }}
+                        disabled={!good || typeof good.price !== 'number' || state.player.money < good.price || state.energy < 1}
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded text-sm mr-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Buy
+                      </button>
+                      <button
+                        onClick={() => {
+                          console.log('Sell button clicked for:', good);
+                          sellGood(good, 1);
+                        }}
+                        disabled={!state.player.inventory.some(item => item.name === good.name && item.quantity > 0)}
+                        className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Sell
+                      </button>
+                    </td>
+                    {state.towns.filter(town => town.name !== currentTown.name).map(town => {
+                      const townGood = town.goods.find(g => g.name === good.name);
+                      if (!townGood) return <td key={town.name} className="p-2">-</td>;
+                      const townPriceTrend = getPriceTrend(townGood.price, townGood.previousPrice);
+                      const townMarketTrend = getMarketTrend(townGood);
+                      return (
+                        <td key={town.name} className="p-2">
+                          <span className="font-bold"><FaDollarSign className="inline" />{townGood.price.toFixed(2)}</span>
+                          <span className="ml-2">
+                            {renderTrendIcon(townPriceTrend)}
+                            <span className="mx-1">|</span>
+                            {renderTrendIcon(townMarketTrend)}
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

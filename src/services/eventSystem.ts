@@ -28,16 +28,17 @@ const newsTemplates = [
   }
 ];
 
-export const generateEvents = (currentDate: Date, gameState: GameState): NewsItem[] => {
-  const shouldGenerateNews = Math.random() < 0.7; // 70% chance to generate news
-  
-  if (shouldGenerateNews) {
-    const template = newsTemplates[Math.floor(Math.random() * newsTemplates.length)];
-    return [{
-      ...template,
-      date: currentDate.toISOString()
-    }];
+export const generateEvents = (newDate: Date, state: GameState): NewsItem[] => {
+  const numberOfEvents = Math.floor(Math.random() * 3) + 1; // Generate 1 to 3 events
+  const newEvents: NewsItem[] = [];
+
+  for (let i = 0; i < numberOfEvents; i++) {
+    const randomTemplate = newsTemplates[Math.floor(Math.random() * newsTemplates.length)];
+    newEvents.push({
+      ...randomTemplate,
+      date: newDate,
+    });
   }
-  
-  return []; // Return an empty array if no news is generated
+
+  return newEvents;
 };
