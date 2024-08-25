@@ -11,3 +11,14 @@ export const advanceTime = (currentDate: Date, days: number): Date => {
   newDate.setDate(newDate.getDate() + days);
   return newDate;
 };
+
+export const formatDate = (date: Date): string => {
+  const year = date.getFullYear();
+  if (year <= 1850) {
+    return year.toString();
+  } else if (year <= 1950) {
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+  } else {
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+};

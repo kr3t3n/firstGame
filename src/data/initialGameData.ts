@@ -1,4 +1,5 @@
-import { Town, Player, Good } from '../types';
+import { Town, Player, Good, GameState } from '../types';
+import { calculatePrice } from '../services/marketSystem';
 
 const allGoods: Good[] = [
   { name: 'Tea', basePrice: 10, price: 10, category: 'Food & Drink' },
@@ -19,16 +20,37 @@ const generateTownGoods = (town: string): Good[] => {
   }));
 };
 
-export const calculatePrice = (basePrice: number, town: string, goodName: string): number => {
-  const localGoods: { [key: string]: string[] } = {
-    'London': ['Tea', 'Cloth'],
-    'Paris': ['Wine', 'Cheese'],
-    'Amsterdam': ['Tulips', 'Fish'],
-  };
-
-  const isLocal = localGoods[town]?.includes(goodName);
-  const distanceFactor = isLocal ? 1 : 1.5 + Math.random() * 0.5;
-  return Math.round(basePrice * distanceFactor * 100) / 100;
+export const initialGameState: GameState = {
+  player: {
+    name: 'Player',
+    money: 1000,
+    inventory: [],
+    currentTown: 'London',
+    skills: {
+      negotiation: 0,
+      logistics: 0,
+      marketKnowledge: 0,
+    },
+    skillPoints: 0,
+  },
+  towns: [
+    { name: 'London', goods: generateTownGoods('London') },
+    { name: 'Paris', goods: generateTownGoods('Paris') },
+    { name: 'Amsterdam', goods: generateTownGoods('Amsterdam') },
+  ],
+  currentDate: new Date(1800, 0, 1), // January 1, 1800
+  energy: 100,
+  maxEnergy: 100,
+  news: [],
+  unlockedTechnologies: [],
+  tradeRoutes: [],
+  expandedSections: {
+    playerInfo: true,
+    town: true,
+    marketAndTravel: true,
+    inventory: true,
+    news: true,
+  },
 };
 
 export const initialTowns: Town[] = [

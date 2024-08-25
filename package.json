@@ -28,6 +28,7 @@
     "axios": "^1.7.5",
     "firebase": "^10.12.5",
     "lucide-react": "^0.427.0",
+    "openai": "^4.56.0",
     "react-router-dom": "^6.26.0"
   }
 }

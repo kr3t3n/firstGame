@@ -1,172 +1,111 @@
-import React, { createContext, useContext, useReducer, useState, useCallback } from 'react';
-import { Town, Good, GameState, GameAction, NewsItem, TradeRoute } from '../types';
-import { initialTowns, initialPlayerData } from '../data/initialGameData';
-import { gameReducer, generateNewsEvents } from '../reducers/gameReducer';
+import React, { createContext, useContext, useReducer, ReactNode, useCallback, useState, useEffect } from 'react';
+import { gameReducer } from '../reducers/gameReducer';
+import { initialGameState } from '../data/initialGameData';
+import { GameState, GameAction, Good, NewsItem } from '../types';
+import { upgradeSkill as upgradeSkillAction } from '../flux/actions';
+import { calculateTurnLength, advanceTime } from '../utils/timeUtils';
 import { generateEvents } from '../services/eventSystem';
-
-// Add this at the top of the file
-const initialExpandedSections = {
-  resources: true,
-  energy: true,
-  character: true,
-  news: true,
-  town: true,
-  travel: true,
-  market: true,
-  inventory: true,
-};
 
 interface GameStateContextType {
   state: GameState;
-  advanceTime: () => void;
-  updateTownPrices: () => void;
-  upgradeSkill: (skill: keyof GameState['player']['skills']) => void;
-  useEnergy: (amount: number) => void;
-  addNews: (newsItem: NewsItem) => void;
   buyGood: (good: Good, quantity: number) => void;
   sellGood: (good: Good, quantity: number) => void;
   travel: (townName: string) => void;
-  expandedSections: { [key: string]: boolean };
-  toggleSection: (section: keyof typeof initialExpandedSections, value?: boolean) => void;
-  updateTradeRoute: (updatedRoute: TradeRoute) => void;
   endTurn: () => void;
+  addNews: (news: NewsItem) => void;
+  toggleSection: (section: string, value?: boolean) => void;
+  expandedSections: {
+    [key: string]: boolean;
+  };
+  upgradeSkill: (skill: string) => void;
+  setCurrentNewsIndex: (index: number) => void;
+  saveGame: () => void;
+  loadGame: () => void;
+  newGame: () => void;
 }
 
 const GameStateContext = createContext<GameStateContextType | undefined>(undefined);
 
-const initialState: GameState = {
-  currentDate: new Date(1800, 0, 1),
-  towns: initialTowns,
-  player: initialPlayerData,
-  energy: 100,
-  maxEnergy: 100,
-  news: [] as NewsItem[], // Explicitly type this as NewsItem[]
-  unlockedTechnologies: [],
-  tradeRoutes: [], // Added this line
-};
+export const GameStateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [state, dispatch] = useReducer(gameReducer, initialGameState);
+  const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
 
-export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(gameReducer, initialState);
-  const [expandedSections, setExpandedSections] = useState({
-    resources: true,
-    energy: true,
-    character: true,
-    news: true,
-    town: true,
-    travel: true,
-    market: true,
-    inventory: true,
-  });
-
-  // Update the toggleSection implementation
-  const toggleSection = useCallback((section: keyof typeof initialExpandedSections, value?: boolean) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: value !== undefined ? value : !prev[section],
-    }));
-  }, []);
-
-  const updateTradeRoute = useCallback((updatedRoute: TradeRoute) => {
-    dispatch({ type: 'UPDATE_TRADE_ROUTE', payload: updatedRoute });
-  }, []);
-
-  const travel = useCallback((townName: string) => {
-    if (townName) {
-      dispatch({ type: 'TRAVEL', payload: townName });
-    }
-  }, [dispatch]);
-
-  const advanceTime = useCallback(async () => {
-    dispatch({ type: 'PROGRESS_TIME' });
-    try {
-      const newEvents = await generateEvents(state.currentDate, state);
-      newEvents.forEach(event => dispatch({ type: 'ADD_NEWS', payload: event }));
-    } catch (error) {
-      console.error("Error generating news:", error);
-      // Optionally, you can dispatch an error news item here
-      dispatch({ type: 'ADD_NEWS', payload: {
-        headline: "News Unavailable",
-        body: "We apologize, but the latest news couldn't be retrieved at this time.",
-        imageUrl: "https://via.placeholder.com/400x200?text=News+Unavailable",
-        date: state.currentDate.toISOString()
-      }});
-    }
-  }, [state]);
-
-  const updateTownPrices = useCallback(() => {
-    dispatch({ type: 'UPDATE_TOWN_PRICES' });
-  }, []);
-
-  const upgradeSkill = useCallback((skill: keyof GameState['player']['skills']) => {
-    dispatch({ type: 'UPGRADE_SKILL', payload: skill });
-  }, []);
-
-  const useEnergy = useCallback((amount: number) => {
-    dispatch({ type: 'USE_ENERGY', payload: amount });
-  }, []);
-
-  const addNews = useCallback((newsItem: NewsItem) => {
-    dispatch({ type: 'ADD_NEWS', payload: newsItem });
-  }, []);
-
-  const buyGood = useCallback((good: Good, quantity: number) => {
+  const buyGood = (good: Good, quantity: number) => {
     dispatch({ type: 'BUY_GOOD', payload: { good, quantity } });
-  }, []);
+  };
 
-  const sellGood = useCallback((good: Good, quantity: number) => {
+  const sellGood = (good: Good, quantity: number) => {
     dispatch({ type: 'SELL_GOOD', payload: { good, quantity } });
-  }, []);
+  };
 
-  const endTurn = useCallback(async () => {
-    dispatch({ type: 'PROGRESS_TIME' });
+  const travel = (townName: string) => {
+    dispatch({ type: 'TRAVEL', payload: townName });
+  };
+
+  const endTurn = useCallback(() => {
+    const turnLength = calculateTurnLength(state.currentDate.getFullYear());
+    const newDate = advanceTime(state.currentDate, turnLength);
+    const newEvents = generateEvents(newDate, state);
+    
+    dispatch({ type: 'PROGRESS_TIME', payload: { newDate, newEvents } });
     dispatch({ type: 'UPDATE_TOWN_PRICES' });
     
-    try {
-      const newEvents = await generateNewsEvents(state);
-      newEvents.forEach(event => {
-        if (isNewsItem(event)) {
-          dispatch({ type: 'ADD_NEWS', payload: event });
-        } else {
-          console.error('Invalid NewsItem:', event);
-        }
-      });
-    } catch (error) {
-      console.error("Error generating news:", error);
-      dispatch({ type: 'ADD_NEWS', payload: {
-        headline: "News Unavailable",
-        body: "We apologize, but the latest news couldn't be retrieved at this time.",
-        imageUrl: "https://via.placeholder.com/400x200?text=News+Unavailable",
-        date: state.currentDate.toISOString()
-      }});
-    }
-  }, [dispatch, state]);
+    // Reset the current news index to 0 to show the latest news
+    setCurrentNewsIndex(0);
+  }, [state]);
 
-  // Add this type guard function
-  function isNewsItem(item: any): item is NewsItem {
-    return (
-      typeof item === 'object' &&
-      typeof item.headline === 'string' &&
-      typeof item.body === 'string' &&
-      typeof item.imageUrl === 'string' &&
-      typeof item.date === 'string'
-    );
-  }
+  const addNews = (news: NewsItem) => {
+    dispatch({ type: 'ADD_NEWS', payload: news });
+  };
+
+  const toggleSection = (section: string, value?: boolean) => {
+    dispatch({ 
+      type: 'TOGGLE_SECTION', 
+      payload: { section, value: value !== undefined ? value : !state.expandedSections[section] } 
+    });
+  };
+
+  const upgradeSkill = (skill: string) => {
+    upgradeSkillAction(dispatch, skill);
+  };
+
+  const saveGame = useCallback(() => {
+    localStorage.setItem('gameState', JSON.stringify(state));
+  }, [state]);
+
+  const loadGame = useCallback(() => {
+    const savedState = localStorage.getItem('gameState');
+    if (savedState) {
+      const parsedState = JSON.parse(savedState);
+      parsedState.currentDate = new Date(parsedState.currentDate); // Convert date string back to Date object
+      dispatch({ type: 'LOAD_GAME', payload: parsedState });
+    }
+  }, []);
+
+  const newGame = useCallback(() => {
+    dispatch({ type: 'NEW_GAME' });
+  }, []);
+
+  // Load saved game on initial render
+  useEffect(() => {
+    loadGame();
+  }, []);
 
   return (
     <GameStateContext.Provider value={{ 
       state, 
-      advanceTime, 
-      updateTownPrices, 
+      buyGood, 
+      sellGood, 
+      travel, 
+      endTurn, 
+      addNews, 
+      toggleSection, 
+      expandedSections: state.expandedSections, 
       upgradeSkill,
-      useEnergy,
-      addNews,
-      buyGood,
-      sellGood,
-      travel,
-      expandedSections,
-      toggleSection,
-      updateTradeRoute,
-      endTurn
+      setCurrentNewsIndex,
+      saveGame,
+      loadGame,
+      newGame
     }}>
       {children}
     </GameStateContext.Provider>
@@ -175,7 +114,7 @@ export const GameStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
 export const useGameState = () => {
   const context = useContext(GameStateContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useGameState must be used within a GameStateProvider');
   }
   return context;

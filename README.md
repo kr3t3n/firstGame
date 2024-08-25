@@ -1,12 +1,32 @@
    # firstGame
    
-   ## Running React on Replit
+   ## Welcome to firstGame
    
-   [React](https://reactjs.org/) is a popular JavaScript library for building user interfaces.
+   This project is a simple game built using modern web technologies.
    
-   [Vite](https://vitejs.dev/) is a blazing fast frontend build tool that includes features like Hot Module Reloading (HMR), optimized builds, and TypeScript support out of the box.
-   
-   Using the two in conjunction is one of the fastest ways to build a web app.
+   ### Technologies Used
+   - [React](https://reactjs.org/): A popular JavaScript library for building user interfaces.
+   - [Vite](https://vitejs.dev/): A fast frontend build tool with features like Hot Module Reloading (HMR), optimized builds, and TypeScript support.
    
    ### Getting Started
+   Follow these steps to get the project up and running on your local machine:
+   
+   1. **Clone the repository**
+   ```
+   git clone https://github.com/your-username/firstGame.git
+   ```
+   2. **Navigate into the project directory**
+   ```
+   cd firstGame
+   ```
+   3. **Install dependencies**
+   ```
+   npm install
+   ```
+   4. **Start the development server**
+   ```
+   npm run dev
+   ```
+   5. Open your browser and visit `http://localhost:3000` to see the app in action.
+   
    - Hit run

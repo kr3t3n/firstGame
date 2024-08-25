@@ -18,6 +18,10 @@ export const endTurn = (dispatch: Dispatch<GameAction>) => {
   dispatch({ type: 'UPDATE_TOWN_PRICES' });
 };
 
+export const upgradeSkill = (dispatch: Dispatch<GameAction>, skill: string) => {
+  dispatch({ type: 'UPGRADE_SKILL', payload: skill });
+};
+
 // Define your actions here
 export const someAction = (good: Good) => {
   // Action implementation

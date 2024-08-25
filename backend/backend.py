@@ -19,7 +19,7 @@
     load_dotenv()
 
     app = Flask(__name__)
-    CORS(app)
+    CORS(app, resources={r"/*": {"origins": "*"}})  # This allows all origins. In production, you should be more specific.
 
     # Set up various AI tools
     openai = OpenAI()  # automatically gets OPENAI_API_KEY from secrets in replit

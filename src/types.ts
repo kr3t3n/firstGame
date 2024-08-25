@@ -31,8 +31,8 @@ export interface Player {
 export interface NewsItem {
   headline: string;
   body: string;
-  imageUrl: string;
   date: string;
+  imageUrl?: string;
 }
 
 export interface GameState {
@@ -57,7 +57,9 @@ export type GameAction =
   | { type: 'TRAVEL'; payload: string }
   | { type: 'AUTO_EXECUTE_TURN' }
   | { type: 'UPDATE_STATE'; payload: GameState }
-  | { type: 'UPDATE_TRADE_ROUTE'; payload: TradeRoute };
+  | { type: 'UPDATE_TRADE_ROUTE'; payload: TradeRoute }
+  | { type: 'LOAD_GAME'; payload: GameState }
+  | { type: 'NEW_GAME' };
 
 export interface TradeRoute {
   id: string;

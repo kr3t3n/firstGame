@@ -1,110 +1,104 @@
-import React, { useCallback } from 'react';
-import ResourcePanel from './ResourcePanel';
+import React, { useState, useCallback } from 'react';
+// import ResourcePanel from './ResourcePanel';
 import TownView from './TownView';
 import TravelMap from './TravelMap';
 import InventoryPanel from './InventoryPanel';
 import CharacterSheet from './CharacterSheet';
-import EnergyDisplay from './EnergyDisplay';
+// import EnergyDisplay from './EnergyDisplay';
 import NewsPanel from './NewsPanel';
 import MarketOverview from './MarketOverview';
 import Header from './Header';
+import BottomNavBar from './BottomNavBar';
 import { useGameState } from '../contexts/GameStateContext';
 
-interface SectionHeaderProps {
+interface SectionProps {
   title: string;
-  section: keyof typeof initialExpandedSections;
+  children: React.ReactNode;
   icon: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+  className?: string;
 }
 
-const initialExpandedSections = {
-  resources: true,
-  energy: true,
-  character: true,
-  news: true,
-  town: true,
-  travel: true,
-  market: true,
-  inventory: true,
-};
-
-const SectionHeader: React.FC<SectionHeaderProps> = ({ title, section, icon }) => {
-  const { expandedSections, toggleSection } = useGameState();
+const Section: React.FC<SectionProps> = ({ title, children, icon, isExpanded, onToggle, className }) => {
   return (
-    <div
-      className="bg-gray-200 p-2 cursor-pointer flex justify-between items-center"
-      onClick={() => toggleSection(section)}
-    >
-      <h2 className="text-lg font-bold">
-        <span className="mr-2">{icon}</span>
-        {title}
-      </h2>
-      <span>{expandedSections[section] ? '▼' : '▶'}</span>
+    <div className={`bg-white rounded-md shadow-sm overflow-hidden border border-gray-200 ${isExpanded ? '' : 'h-10'} ${className}`}>
+      <div 
+        className="bg-gray-50 text-gray-800 p-2 flex items-center justify-between border-b border-gray-200 cursor-pointer"
+        onClick={onToggle}
+      >
+        <div className="flex items-center">
+          <span className="text-base mr-2">{icon}</span>
+          <h2 className="text-sm font-medium">{title}</h2>
+        </div>
+        <span className="text-xs">{isExpanded ? '▼' : '▶'}</span>
+      </div>
+      {isExpanded && <div className="p-2 text-sm">{children}</div>}
     </div>
   );
 };
 
 const GameBoard: React.FC = () => {
-  const { state, expandedSections, toggleSection, advanceTime, updateTownPrices } = useGameState();
+  const { state, endTurn, toggleSection } = useGameState();
+  const [allSectionsExpanded, setAllSectionsExpanded] = useState(true);
 
   const toggleAllSections = useCallback(() => {
-    const allExpanded = Object.values(expandedSections).every(v => v);
-    Object.keys(expandedSections).forEach(section => {
-      toggleSection(section as keyof typeof initialExpandedSections, !allExpanded);
+    const newExpandedState = !allSectionsExpanded;
+    setAllSectionsExpanded(newExpandedState);
+    Object.keys(state.expandedSections).forEach(section => {
+      toggleSection(section, newExpandedState);
     });
-  }, [expandedSections, toggleSection]);
+  }, [allSectionsExpanded, toggleSection, state.expandedSections]);
 
-  const handleEndTurn = useCallback(() => {
-    advanceTime();
-    updateTownPrices();
-  }, [advanceTime, updateTownPrices]);
+  if (!state) {
+    return <div>Loading... State is undefined.</div>;
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Header
+    <div className="bg-gray-100 min-h-screen pb-16 md:pb-0">
+      <Header 
+        onEndTurn={endTurn} 
         onToggleAllSections={toggleAllSections}
-        allSectionsExpanded={Object.values(expandedSections).every(v => v)}
-        onEndTurn={handleEndTurn}
+        allSectionsExpanded={allSectionsExpanded}
+        currentDate={state.currentDate}
       />
-      <main className="flex flex-wrap -mx-2">
-        <div className="w-full md:w-1/4 px-2 space-y-4">
-          <div>
-            <SectionHeader title="Resources" section="resources" icon="💰" />
-            {expandedSections.resources && <ResourcePanel />}
-          </div>
-          <div>
-            <SectionHeader title="Energy" section="energy" icon="⚡" />
-            {expandedSections.energy && <EnergyDisplay />}
-          </div>
-          <div>
-            <SectionHeader title="Character" section="character" icon="👤" />
-            {expandedSections.character && <CharacterSheet />}
-          </div>
+      <div className="container mx-auto px-2 py-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <Section title="Player & Travel" icon="👤" isExpanded={state.expandedSections.playerInfo} onToggle={() => toggleSection('playerInfo')}>
+            <CharacterSheet />
+            <div className="mt-4">
+              <h3 className="font-medium mb-2">Inventory</h3>
+              <InventoryPanel />
+            </div>
+            <div className="mt-4">
+              <h3 className="font-medium mb-2">Travel</h3>
+              <TravelMap />
+            </div>
+          </Section>
+          <Section title="Current Town" icon="🏙️" isExpanded={state.expandedSections.town} onToggle={() => toggleSection('town')}>
+            <TownView />
+          </Section>
+          <Section title="News" icon="📰" isExpanded={state.expandedSections.news} onToggle={() => toggleSection('news')}>
+            <NewsPanel />
+          </Section>
         </div>
-        <div className="w-full md:w-1/2 px-2 space-y-4">
-          <div>
-            <SectionHeader title="News" section="news" icon="📰" />
-            {expandedSections.news && <NewsPanel />}
-          </div>
-          <div>
-            <SectionHeader title="Current Town" section="town" icon="🏙️" />
-            {expandedSections.town && <TownView />}
-          </div>
-          <div>
-            <SectionHeader title="Travel" section="travel" icon="🗺️" />
-            {expandedSections.travel && <TravelMap />}
-          </div>
+        <div className="mt-3">
+          <Section 
+            title="Market Overview" 
+            icon="🌍" 
+            isExpanded={state.expandedSections.marketAndTravel} 
+            onToggle={() => toggleSection('marketAndTravel')}
+            className="w-full"
+          >
+            <MarketOverview />
+          </Section>
         </div>
-        <div className="w-full md:w-1/4 px-2 space-y-4">
-          <div>
-            <SectionHeader title="Market Overview" section="market" icon="📊" />
-            {expandedSections.market && <MarketOverview />}
-          </div>
-          <div>
-            <SectionHeader title="Inventory" section="inventory" icon="🎒" />
-            {expandedSections.inventory && <InventoryPanel />}
-          </div>
-        </div>
-      </main>
+      </div>
+      <BottomNavBar
+        onEndTurn={endTurn}
+        onToggleAllSections={toggleAllSections}
+        allSectionsExpanded={allSectionsExpanded}
+      />
     </div>
   );
 };
