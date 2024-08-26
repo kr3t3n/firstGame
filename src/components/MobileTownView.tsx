@@ -41,11 +41,9 @@ const MobileTownView: React.FC = () => {
   const getMarketTrend = (good: Good) => {
     const marketSentiment = good.marketSentiment || { trend: 'stable', strength: 0 };
     if (marketSentiment.trend === 'up') {
-      if (marketSentiment.strength > 0.7) return 'significant-increase';
-      if (marketSentiment.strength > 0.3) return 'slight-increase';
+      return marketSentiment.strength > 0.5 ? 'significant-increase' : 'slight-increase';
     } else if (marketSentiment.trend === 'down') {
-      if (marketSentiment.strength > 0.7) return 'significant-decrease';
-      if (marketSentiment.strength > 0.3) return 'slight-decrease';
+      return marketSentiment.strength > 0.5 ? 'significant-decrease' : 'slight-decrease';
     }
     return 'stable';
   };

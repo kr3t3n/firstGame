@@ -16,7 +16,7 @@ interface GameStateContextType {
   buyGood: (good: Good, quantity: number) => void;
   sellGood: (good: Good, quantity: number) => void;
   travel: (townName: string) => void;
-  endTurn: () => Promise<void>;
+  endTurn: () => void;
   newGame: () => Promise<void>;
   toggleSection: (sectionName: string, value?: boolean) => void;
   upgradeSkill: (skillName: keyof Player['skills']) => void;
@@ -79,11 +79,14 @@ export const GameStateProvider: React.FC<{ children: ReactNode }> = ({ children 
     actions.travel(dispatch, townName);
   }, [dispatch]);
 
-  const endTurn = useCallback(async () => {
-    const newDate = advanceTime(state.currentDate);
-    const newEvents = await generateNewsEvents(state);
-    actions.endTurn(dispatch, newDate, newEvents);
-  }, [state, dispatch]);
+  const endTurn = useCallback(() => {
+    console.log('Energy before end turn:', state.energy);
+    dispatch({ type: 'END_TURN' });
+  }, [dispatch, state]);
+
+  useEffect(() => {
+    console.log('Current state after update:', state);
+  }, [state]);
 
   const newGame = useCallback(async () => {
     dispatch({ type: 'NEW_GAME' });

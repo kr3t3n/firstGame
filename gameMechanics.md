@@ -147,6 +147,31 @@ Implementation:
     - End conditions could be reaching a specific year or achieving a wealth target.
     - Implementation: To be defined in the main game loop, not yet implemented.
 
+## Time Progression Structure
+
+The game uses a dynamic time progression system that accelerates as the game advances through different eras. This system allows for a more detailed early game experience while speeding up progression in later eras.
+
+1. 1800-1850: 1 turn = 1 year (50 turns)
+2. 1851-1900: 1 turn = 6 months (100 turns)
+3. 1901-1950: 1 turn = 3 months (200 turns)
+4. 1951-2000: 1 turn = 1 month (600 turns)
+5. 2001 onwards: 1 turn = 1 week (52 turns/year)
+
+Implementation:
+- The `calculateTurnLength` function in `timeUtils.ts` determines the number of days per turn based on the current year.
+- The `advanceTime` function progresses the game date by the calculated number of days.
+- `getTurnNumber` and `getDateAfterTurns` functions are provided to convert between turns and dates.
+
+This structure allows for:
+- More detailed gameplay and decision-making in the early stages of the game.
+- Faster progression through later eras to maintain engagement.
+- A sense of accelerating technological and economic progress as the game advances.
+
+Developers should consider this time structure when implementing features such as:
+- Historical events and technological advancements
+- Long-term economic trends and cycles
+- Player progression and skill development rates
+
 ## Balancing and Tuning
 
 To create an engaging and challenging gameplay experience:

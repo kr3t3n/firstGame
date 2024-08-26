@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useGameState } from '../contexts/GameStateContext';
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { NewsItem } from '../types';
+import { formatDate as formatDateUtil } from '../utils/timeUtils';
 
 const NewsPanel: React.FC = () => {
   const { state } = useGameState();
   const [isExpanded, setIsExpanded] = useState(true);
+  const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
 
   if (!state) {
     return <div>Loading...</div>;
@@ -12,11 +15,25 @@ const NewsPanel: React.FC = () => {
 
   const formatDate = (date: Date | string) => {
     if (date instanceof Date) {
-      return date.toLocaleDateString();
+      return formatDateUtil(date);
     } else if (typeof date === 'string') {
-      return new Date(date).toLocaleDateString();
+      return formatDateUtil(new Date(date));
     }
     return 'Unknown Date';
+  };
+
+  const currentNews: NewsItem | undefined = state.news[currentNewsIndex];
+
+  const handleOlderNews = () => {
+    if (currentNewsIndex < state.news.length - 1) {
+      setCurrentNewsIndex(currentNewsIndex + 1);
+    }
+  };
+
+  const handleNewerNews = () => {
+    if (currentNewsIndex > 0) {
+      setCurrentNewsIndex(currentNewsIndex - 1);
+    }
   };
 
   return (
@@ -27,15 +44,32 @@ const NewsPanel: React.FC = () => {
           {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
         </button>
       </div>
-      {isExpanded && (
-        <div className="space-y-4">
-          {state.news.slice().reverse().map((item, index) => (
-            <div key={index} className="border-b pb-2">
-              <p className="text-sm text-gray-500">{formatDate(item.date)}</p>
-              <p>{item.body}</p>
+      {isExpanded && currentNews && (
+        <>
+          <div className="space-y-4">
+            <div className="border-b pb-2">
+              <p className="text-sm text-gray-500">{formatDate(currentNews.date)}</p>
+              <h3 className="font-bold">{currentNews.title}</h3>
+              <p>{currentNews.body}</p>
             </div>
-          ))}
-        </div>
+          </div>
+          <div className="flex justify-between mt-4">
+            <button
+              onClick={handleOlderNews}
+              disabled={currentNewsIndex === state.news.length - 1}
+              className="text-blue-500 disabled:text-gray-400"
+            >
+              <FaChevronLeft /> Older
+            </button>
+            <button
+              onClick={handleNewerNews}
+              disabled={currentNewsIndex === 0}
+              className="text-blue-500 disabled:text-gray-400"
+            >
+              Newer <FaChevronRight />
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

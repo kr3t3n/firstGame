@@ -29,7 +29,10 @@ const Header: React.FC<HeaderProps> = ({ onShowHelp }) => {
         <FaBuilding className="text-blue-600 text-2xl mr-2" />
         <h1 className="text-lg font-bold">Family Business Tycoon</h1>
       </div>
-      <div className="text-xl font-semibold hidden md:block">
+      <div className="text-xl font-semibold hidden md:flex items-center">
+        <svg className="w-6 h-6 mr-2 text-gray-600" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+          <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
         {formatDate(state.currentDate)}
       </div>
       <div className="flex items-center space-x-2">
@@ -61,6 +64,9 @@ const Header: React.FC<HeaderProps> = ({ onShowHelp }) => {
             <>
               <button onClick={signOut} className={iconButtonClass}>
                 <FaSignOutAlt />
+              </button>
+              <button onClick={onShowHelp} className={iconButtonClass}>
+                <FaQuestionCircle />
               </button>
               <button onClick={handleNewGame} className={helpNewGameClass}>
                 <FaRedo className="mr-1" /> New

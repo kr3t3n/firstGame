@@ -253,6 +253,41 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'NEW_GAME':
       return initialGameState;
 
+    case 'END_TURN':
+      const newDate = advanceTime(state.currentDate);
+      const newSkillPoints = state.player.skillPoints + 1;
+      console.log('End turn: Adding skill point. New total:', newSkillPoints);
+
+      // Update prices and market sentiment for all towns
+      const updatedTowns = state.towns.map(town => ({
+        ...town,
+        goods: town.goods.map(good => {
+          const newPrice = calculatePrice(good.basePrice, town.name, good.name);
+          const newMarketSentiment = generateMarketSentiment(good, newDate);
+          return {
+            ...good,
+            previousPrice: good.price,
+            price: newPrice,
+            marketSentiment: newMarketSentiment,
+          };
+        }),
+      }));
+
+      // Generate new news items
+      const newNewsItems = generateNews(state, newDate);
+
+      return {
+        ...state,
+        currentDate: newDate,
+        energy: state.maxEnergy, // Refill energy
+        player: {
+          ...state.player,
+          skillPoints: newSkillPoints,
+        },
+        towns: updatedTowns,
+        news: [...newNewsItems, ...state.news].slice(0, 30), // Keep the latest 30 news items
+      };
+
     default:
       return state;
   }
