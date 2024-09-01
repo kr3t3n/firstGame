@@ -81,7 +81,7 @@ const MobileTownView: React.FC = () => {
                 <button
                   key={size}
                   onClick={() => setBatchSize(size)}
-                  className={`px-4 py-3 text-base rounded-lg flex-1 ${
+                  className={`px-2 py-1 text-sm rounded-lg flex-1 ${
                     batchSize === size
                       ? 'bg-blue-500 text-white'
                       : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -108,22 +108,24 @@ const MobileTownView: React.FC = () => {
                     <span className="mx-1">|</span>
                     {renderTrendIcon(marketTrend)}
                   </span>
-                  <div className="flex space-x-2 mt-2">
-                    <button
-                      onClick={() => buyGood(good, batchSize)}
-                      disabled={state.player.money < good.price * batchSize || state.energy < batchSize}
-                      className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-base disabled:opacity-50 disabled:cursor-not-allowed flex-1 flex items-center justify-center"
-                    >
-                      Buy {batchSize}
-                    </button>
-                    <button
-                      onClick={() => sellGood(good, batchSize)}
-                      disabled={!state.player.inventory.some(item => item.name === good.name && item.quantity >= batchSize)}
-                      className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-base disabled:opacity-50 disabled:cursor-not-allowed flex-1 flex items-center justify-center"
-                    >
-                      Sell {batchSize}
-                    </button>
-                  </div>
+                </div>
+                <div className="flex space-x-2 mt-2">
+                  <button
+                    onClick={() => buyGood(good, batchSize)}
+                    disabled={state.player.money < good.price * batchSize || state.energy < batchSize}
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed flex-1 flex flex-col items-center justify-center"
+                  >
+                    <span>Buy {batchSize} {productIcons[good.name] || '🔹'}</span>
+                    <span>for ${(good.price * batchSize).toFixed(2)}</span>
+                  </button>
+                  <button
+                    onClick={() => sellGood(good, batchSize)}
+                    disabled={!state.player.inventory.some(item => item.name === good.name && item.quantity >= batchSize)}
+                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed flex-1 flex flex-col items-center justify-center"
+                  >
+                    <span>Sell {batchSize} {productIcons[good.name] || '🔹'}</span>
+                    <span>for ${(good.price * batchSize).toFixed(2)}</span>
+                  </button>
                 </div>
                 <div className="flex justify-between mt-2 text-sm">
                   {state.towns.filter(town => town.name !== currentTown.name).map((town, index) => {

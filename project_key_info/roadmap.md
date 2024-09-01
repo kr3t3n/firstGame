@@ -8,6 +8,7 @@
 - News panel
 - Responsive design for desktop and mobile
 - Batch buying/selling (x1, x10, x100, x1000)
+- Enhanced mobile interface for trading
 
 ## Upcoming Features
 
@@ -16,6 +17,7 @@
 - Modals in lightbox to announce new products when the relevant year/date/milestone comes
 - Go ahead x turns (e.g., go ahead 10 turns, go ahead 20 turns, etc.)
 - Write better tooltips
+- Implement similar trading interface improvements for desktop view
 
 ### Mid-term Goals
 - Enhance mechanics for the character skills
