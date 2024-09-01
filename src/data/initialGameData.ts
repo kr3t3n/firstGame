@@ -59,12 +59,18 @@ const initialGameStateWithoutNews: Omit<GameState, 'news'> = {
     inventory: true,
     news: true,
   },
+  historicalTreasury: [initialPlayerData.money], // Add this line
 };
 
 export const initialGameState: GameState = {
   ...initialGameStateWithoutNews,
   currentDate: startDate,
   news: generateNews(initialGameStateWithoutNews as GameState, startDate),
+  historicalTreasury: [initialPlayerData.money], // Initialize with the starting money
+  expandedSections: {
+    ...initialGameStateWithoutNews.expandedSections,
+    historicalData: false,
+  },
 };
 
 // Comment out or remove this line

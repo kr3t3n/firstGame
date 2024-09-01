@@ -20,18 +20,8 @@ const CharacterSheet: React.FC = () => {
     const upgradeCost = Math.pow(2, currentLevel);
     const energyCost = 10;
 
-    console.log('Attempting to upgrade skill:', skill);
-    console.log('Current skill level:', currentLevel);
-    console.log('Upgrade cost:', upgradeCost);
-    console.log('Current money:', state.player.money);
-    console.log('Current energy:', state.energy);
-    console.log('Current skill points:', state.player.skillPoints);
-
     if (state.player.money >= upgradeCost && state.energy >= energyCost && state.player.skillPoints > 0) {
-      console.log('Calling upgradeSkill function');
       upgradeSkill(skill);
-    } else {
-      console.log('Upgrade conditions not met in component');
     }
   };
 
@@ -59,8 +49,6 @@ const CharacterSheet: React.FC = () => {
 
   const displayMoney = React.useMemo(() => {
     const money = state.player.money;
-    console.log('Calculating displayMoney in CharacterSheet:', money);
-    console.log('Player state in CharacterSheet:', state.player);
     return typeof money === 'number' && !isNaN(money) ? money.toFixed(2) : '0.00';
   }, [state.player.money]);
 

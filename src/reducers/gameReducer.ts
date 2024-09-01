@@ -110,84 +110,46 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
         energy: Math.max(0, state.energy - action.payload),
       };
 
-    case 'BUY_GOOD': {
+    case 'BUY_GOOD':
       const { good, quantity, cost } = action.payload;
-      console.log('BUY_GOOD action received:', { good, quantity, cost });
-      console.log('Current player money:', state.player.money);
-      console.log('Current energy:', state.energy);
-
-      if (state.player.money < cost || state.energy < 1) {
-        console.log('Not enough money or energy to buy');
-        return state;
+      if (state.player.money >= cost && state.energy >= quantity) {
+        return {
+          ...state,
+          player: {
+            ...state.player,
+            money: Number((state.player.money - cost).toFixed(2)),
+            inventory: [
+              ...state.player.inventory.filter(item => item.name !== good.name),
+              {
+                ...good,
+                quantity: (state.player.inventory.find(item => item.name === good.name)?.quantity || 0) + quantity
+              }
+            ]
+          },
+          energy: state.energy - quantity
+        };
       }
-      
-      const updatedMoney = state.player.money - cost;
-      const updatedEnergy = state.energy - 1;
-      
-      const existingItem = state.player.inventory.find(item => item.name === good.name);
-      
-      const updatedInventory = existingItem
-        ? state.player.inventory.map(item =>
-            item.name === good.name
-              ? { ...item, quantity: item.quantity + quantity }
-              : item
-          )
-        : [...state.player.inventory, { ...good, quantity }];
+      return state;
 
-      console.log('Updated money after buy:', updatedMoney);
-      console.log('Updated energy after buy:', updatedEnergy);
-      console.log('Updated inventory after buy:', updatedInventory);
-
-      const newState = {
-        ...state,
-        player: {
-          ...state.player,
-          money: updatedMoney,
-          inventory: updatedInventory
-        },
-        energy: updatedEnergy
-      };
-
-      console.log('New state after BUY_GOOD:', newState);
-      return newState;
-    }
-
-    case 'SELL_GOOD': {
-      const { good, quantity } = action.payload;
-      console.log('SELL_GOOD action received:', { good, quantity });
-      console.log('Current player money:', state.player.money);
-      console.log('Current inventory:', state.player.inventory);
-
-      const inventoryItem = state.player.inventory.find(item => item.name === good.name);
-      if (!inventoryItem || inventoryItem.quantity < quantity) {
-        console.log('Not enough items in inventory to sell');
-        return state;
+    case 'SELL_GOOD':
+      const { good: sellGood, quantity: sellQuantity } = action.payload;
+      const inventoryItem = state.player.inventory.find(item => item.name === sellGood.name);
+      if (inventoryItem && inventoryItem.quantity >= sellQuantity) {
+        const totalEarnings = sellGood.price * sellQuantity;
+        return {
+          ...state,
+          player: {
+            ...state.player,
+            money: Number((state.player.money + totalEarnings).toFixed(2)),
+            inventory: state.player.inventory.map(item =>
+              item.name === sellGood.name
+                ? { ...item, quantity: item.quantity - sellQuantity }
+                : item
+            ).filter(item => item.quantity > 0)
+          }
+        };
       }
-
-      const earnings = good.price * quantity;
-      console.log('Earnings from sale:', earnings);
-
-      const updatedInventory = state.player.inventory.map(item =>
-        item.name === good.name
-          ? { ...item, quantity: item.quantity - quantity }
-          : item
-      ).filter(item => item.quantity > 0);
-
-      const updatedMoney = state.player.money + earnings;
-      console.log('Updated money after sale:', updatedMoney);
-
-      const newState = {
-        ...state,
-        player: {
-          ...state.player,
-          money: updatedMoney,
-          inventory: updatedInventory,
-        },
-      };
-
-      console.log('New state after SELL_GOOD:', newState);
-      return newState;
-    }
+      return state;
 
     case 'TRAVEL': {
       if (action.payload) {
@@ -276,6 +238,9 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       // Generate new news items
       const newNewsItems = generateNews(state, newDate);
 
+      // Add current treasury value to historical treasury
+      const historicalTreasury = [...(state.historicalTreasury || []), state.player.money];
+
       return {
         ...state,
         currentDate: newDate,
@@ -286,6 +251,7 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
         },
         towns: updatedTowns,
         news: [...newNewsItems, ...state.news].slice(0, 30), // Keep the latest 30 news items
+        historicalTreasury,
       };
 
     default:

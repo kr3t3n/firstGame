@@ -22,12 +22,12 @@ export default function Header() {
           <div className="flex items-center">
             <Image 
               src="/fbticon.svg"
-              alt="Family Business Tycoon Icon"
+              alt="Business Empire Icon"
               width={32}
               height={32}
               className="mr-2"
             />
-            <h1 className="text-2xl font-bold">Family Business Tycoon</h1>
+            <h1 className="text-2xl font-bold">Business Empire</h1>
           </div>
           {/* ... rest of the header content */}
         </div>

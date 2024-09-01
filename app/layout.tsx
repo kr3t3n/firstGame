@@ -5,26 +5,33 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Family Business Tycoon | Build Your Trading Empire Through History',
-  description: 'Embark on a captivating journey through time in Family Business Tycoon, an immersive economic simulation game. Manage your family\'s trading empire across bustling towns, navigate dynamic markets, and make strategic decisions to grow your wealth and influence.',
-  keywords: 'economic simulation, trading game, family business, tycoon game, historical strategy, market simulation, business management, trade empire, economic strategy, time progression game',
+  title: 'Business Empire | Build Your Trading Dynasty Through History',
+  description: 'Embark on an epic journey through time in Business Empire, an immersive economic simulation game. Manage your trading empire across bustling towns, navigate dynamic markets, and make strategic decisions to grow your wealth and influence.',
+  keywords: 'economic simulation, trading game, business empire, tycoon game, historical strategy, market simulation, business management, trade empire, economic strategy, time progression game',
   openGraph: {
-    title: 'Family Business Tycoon',
-    description: 'Build your trading empire through historical eras',
+    title: 'Business Empire',
+    description: 'Build your trading dynasty through historical eras',
     images: [
       {
         url: '/images/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'Family Business Tycoon Game',
+        alt: 'Business Empire Game',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Family Business Tycoon',
-    description: 'Build your trading empire through historical eras',
-    images: ['/images/twitter-image.jpg'],
+    title: 'Business Empire',
+    description: 'Build your trading dynasty through historical eras',
+    images: [
+      {
+        url: '/images/twitter-image.jpg',
+        width: 1200,
+        height: 675,
+        alt: 'Business Empire Game',
+      }
+    ],
   },
   icons: {
     icon: '/favicon.ico',

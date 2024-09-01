@@ -15,13 +15,13 @@ const HelpScreen: React.FC<HelpScreenProps> = ({ onClose }) => {
   const faqSections = [
     {
       title: 'Game Objective',
-      content: 'Your goal is to become the wealthiest merchant by buying low, selling high, and managing your resources effectively. Travel between towns, trade goods, and upgrade your skills to maximize profits.'
+      content: 'Your goal in Business Empire is to become the wealthiest entrepreneur by buying low, selling high, and managing your resources effectively. Travel between towns, trade goods, and upgrade your skills to maximize profits and build your business empire.'
     },
     {
       title: 'Game Interface',
       content: (
         <>
-          <p>The game interface consists of several key sections:</p>
+          <p>The Business Empire interface consists of several key sections:</p>
           <ul className="list-disc pl-5 mt-2">
             <li><FaUserCircle className="inline mr-2" /> Character Sheet: Shows your money, energy, and skills</li>
             <li><FaShoppingCart className="inline mr-2" /> Inventory: Displays the goods you currently own</li>
@@ -48,11 +48,12 @@ const HelpScreen: React.FC<HelpScreenProps> = ({ onClose }) => {
           <p>To trade:</p>
           <ol className="list-decimal pl-5 mt-2">
             <li>Go to the Current Town Market section</li>
-            <li>Click "Buy" to purchase goods (if you have enough money and energy)</li>
+            <li>Select a batch size (x1, x10, x100, or x1000)</li>
+            <li>Click "Buy" to purchase goods in the selected batch size (if you have enough money and energy)</li>
             <li>Travel to another town where the goods might be more valuable</li>
-            <li>Click "Sell" to sell goods from your inventory</li>
+            <li>Click "Sell" to sell goods from your inventory in the selected batch size</li>
           </ol>
-          <p className="mt-2">Tip: Pay attention to market trends and news events that might affect prices!</p>
+          <p className="mt-2">Tip: Use batch sizes to quickly trade large quantities of goods. Be careful with larger batches as they require more money and energy!</p>
         </>
       )
     },
@@ -115,10 +116,10 @@ const HelpScreen: React.FC<HelpScreenProps> = ({ onClose }) => {
       title: 'Autosaving and Google Account',
       content: (
         <>
-          <p><FaSave className="inline mr-2" /> Autosaving: Your game progress is automatically saved after every action you take in the game.</p>
+          <p><FaSave className="inline mr-2" /> Autosaving: Your Business Empire progress is automatically saved after every action you take in the game.</p>
           <p><FaGoogle className="inline mr-2" /> Google Account: Your game is linked to your Google account. This allows you to:</p>
           <ul className="list-disc pl-5 mt-2">
-            <li>Resume your game from any device by signing in with the same Google account.</li>
+            <li>Resume your Business Empire from any device by signing in with the same Google account.</li>
             <li>Have your progress automatically synced and saved in real-time.</li>
             <li>Ensure your game data is securely stored and associated with your account.</li>
           </ul>
@@ -147,7 +148,7 @@ const HelpScreen: React.FC<HelpScreenProps> = ({ onClose }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div ref={modalRef} className="bg-white rounded-lg p-4 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">How to Play</h2>
+          <h2 className="text-2xl font-bold">How to Play Business Empire</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <FaTimes size={24} />
           </button>

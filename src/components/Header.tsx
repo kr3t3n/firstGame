@@ -28,8 +28,8 @@ const Header: React.FC<HeaderProps> = ({ onShowHelp }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
-            <img src="/fbticon.svg" alt="Family Business Tycoon Icon" className="text-blue-600 text-xs mr-2 h-6" />
-            <h1 className="text-lg font-bold">Family Business Tycoon</h1>
+            <img src="/fbticon.svg" alt="Business Empire Icon" className="text-blue-600 text-xs mr-2 h-6" />
+            <h1 className="text-lg font-bold">Business Empire</h1>
           </div>
           <div className="text-xl font-semibold hidden md:flex items-center">
             <svg className="w-6 h-6 mr-2 text-gray-600" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">

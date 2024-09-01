@@ -7,6 +7,7 @@ import { productIcons } from '../utils/productIcons';
 const TownView: React.FC = () => {
   const { state, buyGood, sellGood } = useGameState();
   const [isExpanded, setIsExpanded] = useState(true);
+  const [batchSize, setBatchSize] = useState<number>(1);
 
   if (!state || !state.player) {
     return <div>Loading...</div>;
@@ -53,6 +54,8 @@ const TownView: React.FC = () => {
     return 'stable';
   };
 
+  const batchSizes = [1, 10, 100, 1000];
+
   return (
     <div className="mb-4 p-4 bg-white rounded-lg shadow-md">
       <div className="flex justify-between items-center mb-2">
@@ -63,6 +66,24 @@ const TownView: React.FC = () => {
       </div>
       {isExpanded && (
         <div className="overflow-x-auto">
+          <div className="mb-4">
+            <label className="block mb-2 text-sm font-medium">Batch Size:</label>
+            <div className="flex space-x-2">
+              {batchSizes.map(size => (
+                <button
+                  key={size}
+                  onClick={() => setBatchSize(size)}
+                  className={`px-4 py-3 text-base rounded-lg flex-1 ${
+                    batchSize === size
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  x{size}
+                </button>
+              ))}
+            </div>
+          </div>
           <table className="w-full min-w-max">
             <thead>
               <tr className="bg-gray-100">
@@ -99,25 +120,25 @@ const TownView: React.FC = () => {
                         onClick={() => {
                           console.log('Buy button clicked for:', good);
                           if (good && typeof good.price === 'number') {
-                            buyGood(good, 1);
+                            buyGood(good, batchSize);
                           } else {
                             console.error('Invalid good or price:', good);
                           }
                         }}
-                        disabled={!good || typeof good.price !== 'number' || state.player.money < good.price || state.energy < 1}
-                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 rounded text-sm mr-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!good || typeof good.price !== 'number' || state.player.money < good.price * batchSize || state.energy < batchSize}
+                        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-base mr-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Buy
+                        Buy {batchSize}
                       </button>
                       <button
                         onClick={() => {
                           console.log('Sell button clicked for:', good);
-                          sellGood(good, 1);
+                          sellGood(good, batchSize);
                         }}
-                        disabled={!state.player.inventory.some(item => item.name === good.name && item.quantity > 0)}
-                        className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!state.player.inventory.some(item => item.name === good.name && item.quantity >= batchSize)}
+                        className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-base disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Sell
+                        Sell {batchSize}
                       </button>
                     </td>
                     {state.towns.filter(town => town.name !== currentTown.name).map(town => {

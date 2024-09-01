@@ -48,6 +48,7 @@ export interface GameState {
   expandedSections: {
     [key: string]: boolean;
   };
+  historicalTreasury: number[]; // Add this line
 }
 
 export type GameAction =

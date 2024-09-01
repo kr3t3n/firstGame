@@ -68,11 +68,12 @@ export const GameStateProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, [user]);
 
   const buyGood = useCallback((good: Good, quantity: number) => {
-    actions.buyGood(dispatch, good, quantity);
+    const cost = good.price * quantity;
+    dispatch({ type: 'BUY_GOOD', payload: { good, quantity, cost } });
   }, [dispatch]);
 
   const sellGood = useCallback((good: Good, quantity: number) => {
-    actions.sellGood(dispatch, good, quantity);
+    dispatch({ type: 'SELL_GOOD', payload: { good, quantity } });
   }, [dispatch]);
 
   const travel = useCallback((townName: string) => {
@@ -97,8 +98,11 @@ export const GameStateProvider: React.FC<{ children: ReactNode }> = ({ children 
     actions.upgradeSkill(dispatch, skill);
   }, [dispatch]);
 
-  const toggleSection = useCallback((section: string, value?: boolean) => {
-    actions.toggleSection(dispatch, section, value !== undefined ? value : !state.expandedSections[section]);
+  const toggleSection = useCallback((section: string) => {
+    dispatch({ 
+      type: 'TOGGLE_SECTION', 
+      payload: { section, value: !state.expandedSections[section] } 
+    });
   }, [dispatch, state.expandedSections]);
 
   const contextValue = useMemo(() => ({
