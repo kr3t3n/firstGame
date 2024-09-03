@@ -181,3 +181,33 @@ To create an engaging and challenging gameplay experience:
 - Consider implementing dynamic difficulty adjustments based on player performance.
 
 Future developers should pay special attention to these balance points and be prepared to fine-tune them based on player feedback and gameplay data.
+
+## Welcome Screen and User Onboarding
+
+1. **Welcome Screen**
+   - Displayed to new users and those who haven't chosen to hide it.
+   - Provides an introduction to the game and its core mechanics.
+   - Implemented in `WelcomeScreen.tsx`.
+
+2. **Tutorial Screens**
+   - A series of screens guiding players through key game concepts:
+     - Introduction to the game world
+     - Key instructions and tips
+     - Core mechanics overview
+     - Getting started guide
+     - Teaser for future progression
+
+3. **User Preference Storage**
+   - For logged-in users: Preferences stored in Firestore.
+   - For non-logged users: Preferences stored in local storage.
+   - Implemented through `getUserPreference` and `updateUserPreference` functions.
+
+4. **Responsive Design**
+   - Welcome screen adapts to both desktop and mobile layouts.
+   - Ensures a smooth onboarding experience across devices.
+
+5. **Don't Show Again Option**
+   - Players can choose to skip the welcome screen in future sessions.
+   - Preference is stored based on user authentication status.
+
+This onboarding system helps new players understand the game mechanics and provides a smooth entry point into the complex world of Family Business Tycoon.

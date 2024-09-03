@@ -1,52 +1,72 @@
-import type { Metadata } from 'next'
+'use client'
+
+import { useEffect, useState } from 'react'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import WelcomeScreen from '@/components/welcome-screen'  // Updated import
+import { useUser } from '@/lib/UserContext'
+import { getUserPreference, updateUserPreference } from '@/lib/firestore'
 
 const inter = Inter({ subsets: ['latin'] })
-
-export const metadata: Metadata = {
-  title: 'Business Empire | Build Your Trading Dynasty Through History',
-  description: 'Embark on an epic journey through time in Business Empire, an immersive economic simulation game. Manage your trading empire across bustling towns, navigate dynamic markets, and make strategic decisions to grow your wealth and influence.',
-  keywords: 'economic simulation, trading game, business empire, tycoon game, historical strategy, market simulation, business management, trade empire, economic strategy, time progression game',
-  openGraph: {
-    title: 'Business Empire',
-    description: 'Build your trading dynasty through historical eras',
-    images: [
-      {
-        url: '/images/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Business Empire Game',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Business Empire',
-    description: 'Build your trading dynasty through historical eras',
-    images: [
-      {
-        url: '/images/twitter-image.jpg',
-        width: 1200,
-        height: 675,
-        alt: 'Business Empire Game',
-      }
-    ],
-  },
-  icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-icon.png',
-  },
-}
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const [showWelcome, setShowWelcome] = useState(false)
+  const { user } = useUser()
+
+  console.log('RootLayout rendered, user:', user)
+
+  useEffect(() => {
+    console.log('useEffect triggered')
+    const checkWelcomeScreen = async () => {
+      console.log('Checking welcome screen')
+      if (user) {
+        console.log('User found:', user)
+        try {
+          const hasSeenWelcome = await getUserPreference(user.uid, 'hasSeenWelcome')
+          console.log('Has seen welcome:', hasSeenWelcome)
+          setShowWelcome(!hasSeenWelcome)
+        } catch (error) {
+          console.error('Error getting user preference:', error)
+        }
+      } else {
+        console.log('No user found')
+        const hasSeenWelcome = localStorage.getItem('hasSeenWelcome')
+        console.log('Local storage has seen welcome:', hasSeenWelcome)
+        setShowWelcome(hasSeenWelcome !== 'true')
+      }
+    }
+
+    checkWelcomeScreen()
+  }, [user])
+
+  console.log('Show welcome:', showWelcome)
+
+  const handleCloseWelcome = (dontShowAgain: boolean) => {
+    console.log('Closing welcome screen, dontShowAgain:', dontShowAgain)
+    setShowWelcome(false)
+    if (user) {
+      console.log('Updating user preference in Firestore')
+      updateUserPreference(user.uid, 'hasSeenWelcome', true)
+    } else if (dontShowAgain) {
+      console.log('Updating local storage')
+      localStorage.setItem('hasSeenWelcome', 'true')
+    }
+  }
+
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {children}
+        {showWelcome ? (
+          <WelcomeScreen onClose={handleCloseWelcome} />
+        ) : (
+          console.log('Welcome screen not shown')
+        )}
+      </body>
     </html>
   )
 }
