@@ -87,7 +87,7 @@ const CharacterSheet: React.FC = () => {
       <div className="mb-4 bg-yellow-100 p-3 rounded-lg">
         <h3 className="text-sm font-semibold mb-1 text-yellow-800 flex items-center">
           Skill Points: {state.player.skillPoints}
-          <Tooltip content="Use skill points to improve your abilities. Earn more by leveling up or completing special events.">
+          <Tooltip content="Use skill points to improve your abilities. Earn more by completing turns and special events.">
             <FaInfoCircle className="ml-1 text-yellow-600 cursor-help" />
           </Tooltip>
         </h3>
