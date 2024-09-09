@@ -25,6 +25,12 @@ const GameBoard: React.FC = () => {
     </Tooltip>
   );
 
+  const InventoryTooltip = (
+    <Tooltip content="Your current goods. The capacity increases with your Supply Chain skill.">
+      <FaInfoCircle className="ml-2 text-gray-600 cursor-help" />
+    </Tooltip>
+  );
+
   console.log('GameBoard - Rendering component');
   return (
     <div className="container mx-auto p-4 pb-20 md:pb-4">
@@ -35,7 +41,7 @@ const GameBoard: React.FC = () => {
           <div className="mb-4 p-4 bg-white rounded-lg shadow-md">
             <h2 className="text-xl font-bold mb-4">Business Data</h2>
             <CharacterSheet />
-            <Inventory />
+            <Inventory tooltip={InventoryTooltip} />
           </div>
           
           {/* TravelMap */}
