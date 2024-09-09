@@ -7,6 +7,8 @@ import TownView from './TownView';
 import NewsPanel from './NewsPanel';
 import MobileTownView from './MobileTownView';
 import { HistoricalData } from './HistoricalData';
+import { FaInfoCircle } from 'react-icons/fa';
+import Tooltip from './Tooltip';
 
 const GameBoard: React.FC = () => {
   const { state } = useGameState();
@@ -16,6 +18,12 @@ const GameBoard: React.FC = () => {
     console.log('GameBoard - No state available');
     return <div>Loading...</div>;
   }
+
+  const NewsTooltip = (
+    <Tooltip content="Stay informed about market changes, technological advancements, and other events that may impact your business.">
+      <FaInfoCircle className="ml-2 text-gray-600 cursor-help" />
+    </Tooltip>
+  );
 
   console.log('GameBoard - Rendering component');
   return (
@@ -35,7 +43,7 @@ const GameBoard: React.FC = () => {
           
           {/* NewsPanel (only on desktop) */}
           <div className="hidden md:block">
-            <NewsPanel />
+            <NewsPanel tooltip={NewsTooltip} />
           </div>
         </div>
 
@@ -53,7 +61,7 @@ const GameBoard: React.FC = () => {
           
           {/* NewsPanel (only on mobile) */}
           <div className="md:hidden">
-            <NewsPanel />
+            <NewsPanel tooltip={NewsTooltip} />
           </div>
 
           {/* Historical Data */}

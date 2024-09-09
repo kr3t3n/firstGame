@@ -4,7 +4,11 @@ import { FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight } from 'react
 import { NewsItem } from '../types';
 import { formatDate as formatDateUtil } from '../utils/timeUtils';
 
-const NewsPanel: React.FC = () => {
+interface NewsPanelProps {
+  tooltip: React.ReactNode;
+}
+
+const NewsPanel: React.FC<NewsPanelProps> = ({ tooltip }) => {
   const { state } = useGameState();
   const [isExpanded, setIsExpanded] = useState(true);
   const [currentNewsIndex, setCurrentNewsIndex] = useState(0);
@@ -39,7 +43,10 @@ const NewsPanel: React.FC = () => {
   return (
     <div className="bg-white rounded-lg shadow-md p-4 mb-4">
       <div className="flex justify-between items-center mb-2">
-        <h2 className="text-xl font-bold">News & Events</h2>
+        <h2 className="text-xl font-bold flex items-center">
+          News & Events
+          {tooltip}
+        </h2>
         <button onClick={() => setIsExpanded(!isExpanded)} className="text-gray-500">
           {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
         </button>
