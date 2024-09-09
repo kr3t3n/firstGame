@@ -1,6 +1,7 @@
 import React from 'react';
 import { useGameState } from '../contexts/GameStateContext';
-import { FaDollarSign, FaBolt, FaHandshake, FaTruck, FaChartLine } from 'react-icons/fa';
+import { FaDollarSign, FaBolt, FaHandshake, FaTruck, FaChartLine, FaInfoCircle } from 'react-icons/fa';
+import Tooltip from './Tooltip';
 
 const CharacterSheet: React.FC = () => {
   const { state, upgradeSkill } = useGameState();
@@ -56,7 +57,12 @@ const CharacterSheet: React.FC = () => {
     <div className="mb-4">
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="bg-green-100 p-3 rounded-lg">
-          <h3 className="text-sm font-semibold mb-1 text-green-800">Treasury</h3>
+          <h3 className="text-sm font-semibold mb-1 text-green-800 flex items-center">
+            Treasury
+            <Tooltip content="Your available funds for trading and investments. Increase it by selling goods at a profit!">
+              <FaInfoCircle className="ml-1 text-green-600 cursor-help" />
+            </Tooltip>
+          </h3>
           <p className="text-lg flex items-center text-green-700">
             <FaDollarSign className="w-4 h-4 mr-1" />
             {displayMoney}
